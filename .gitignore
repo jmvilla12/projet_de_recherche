@@ -60,6 +60,7 @@ CMakeLists.txt.user*
 *.opensdf
 *.vcxproj
 *vcxproj.*
+.qmlls.ini
 
 # MinGW generated files
 *.Debug
