@@ -49,12 +49,49 @@ cmake --build .
 # Linux/Mac: ./appprojet_de_recherche
 ```
 
+## Code Quality
+
+This project uses automated tools to maintain code quality:
+
+### Formatting (clang-format)
+Auto-formats C++ code. Configuration in `.clang-format`.
+
+```bash
+# Format a file
+clang-format -i src/myfile.cpp
+
+# Format all C++ files
+find . -name "*.cpp" -o -name "*.h" | xargs clang-format -i
+```
+
+VS Code users: Install "Clang-Format" extension for auto-format on save.
+
+### Linting (clang-tidy)
+Static analysis tool. Configuration in `.clang-tidy`.
+
+```bash
+# Analyze a file
+clang-tidy src/myfile.cpp -- -std=c++17
+```
+
+### Pre-commit Hooks (Optional)
+Auto-formats code before each commit.
+
+```bash
+# Install hooks
+bash scripts/setup-hooks.sh
+
+# Skip temporarily
+git commit --no-verify
+```
+
+### Coding Guidelines
+See [docs/CODING_GUIDELINES.md](docs/CODING_GUIDELINES.md) for detailed style guide.
+
 ## Resources
 - [Qt Documentation](https://doc.qt.io/qt-6.8/gettingstarted.html)
 - [CMake with Qt](https://doc.qt.io/qt-6/cmake-get-started.html)
-
-## License
-MIT License - See [LICENSE.txt](LICENSE.txt)
+- [Coding Guidelines](docs/CODING_GUIDELINES.md)
 
 ## License
 MIT License - See [LICENSE.txt](LICENSE.txt)
