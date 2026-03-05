@@ -2,20 +2,22 @@ cmake_minimum_required(VERSION 3.16)
 
 project(projet_de_recherche VERSION 0.1 LANGUAGES CXX)
 
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Quick)
+find_package(Qt6 REQUIRED COMPONENTS Quick QuickControls2 Location Positioning)
 
 qt_standard_project_setup(REQUIRES 6.8)
 
 qt_add_executable(appprojet_de_recherche
-    main.cpp
+    src/main.cpp
 )
 
 qt_add_qml_module(appprojet_de_recherche
     URI projet_de_recherche
     QML_FILES
-        Main.qml
+        qml/Main.qml
+        qml/MapView.qml
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
@@ -30,7 +32,7 @@ set_target_properties(appprojet_de_recherche PROPERTIES
 )
 
 target_link_libraries(appprojet_de_recherche
-    PRIVATE Qt6::Quick
+    PRIVATE Qt6::Quick Qt6::QuickControls2 Qt6::Location Qt6::Positioning
 )
 
 include(GNUInstallDirs)

@@ -9,10 +9,38 @@ water cleaning missions.
 Built with Qt6/QML for the UI and C++ for path planning logic.
 
 ## Requirements
-- Qt 6.8+
+- Qt 6.8+ with modules: **Quick**, **QuickControls2**, **Location**, **Positioning**
 - CMake 3.16+
 - C++17
 - Python 3.x (for scripts)
+
+## Managing Qt Modules
+
+Qt modules are managed through the **Qt Maintenance Tool** (not via bash/pip/apt).
+
+**Open it from:**
+- Windows: `C:\Qt\MaintenanceTool.exe` or search "Qt Maintenance Tool" in Start Menu
+- Linux/Mac: `~/Qt/MaintenanceTool`
+
+**To install a missing module:**
+1. Open Qt Maintenance Tool → "Add or remove components"
+2. Navigate to `Qt → Qt 6.x.x → MinGW 64-bit` (or your compiler)
+3. Check the module you need → Next → Install
+
+**Modules required by this project:**
+
+| Module | Purpose |
+|--------|---------|
+| Qt Quick | QML engine and base components |
+| Qt Quick Controls 2 | UI controls (Button, ToolBar, etc.) |
+| Qt Location | Map display via OSM |
+| Qt Positioning | GPS coordinate types |
+
+**After installing a new module**, delete `build/CMakeCache.txt` and reconfigure:
+```bash
+rm build/CMakeCache.txt
+# Then rebuild from Qt Creator or command line
+```
 
 ## Project Structure
 ```
