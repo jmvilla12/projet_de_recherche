@@ -13,6 +13,22 @@ Built with Qt6/QML for the UI and C++ for path planning logic.
 - CMake 3.16+
 - C++17
 - Python 3.x (for scripts)
+- Internet connection (map tiles loaded from OpenStreetMap)
+
+## Features
+
+### Map View
+- OpenStreetMap tiles (no API key required)
+- Pan with click and drag
+- Zoom with scroll wheel or `+`/`−` buttons
+
+### Area Drawing
+- Click **"Draw Area"** to enter drawing mode
+- Click on the map to place polygon vertices — each vertex is shown as a blue dot
+- A minimum of 3 points is required to close the polygon
+- Click **"Finish Area"** to confirm the polygon
+- Click **"Cancel"** to discard the drawing in progress
+- Click **"Clear"** to remove a finished polygon
 
 ## Managing Qt Modules
 
