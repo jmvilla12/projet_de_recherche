@@ -1,7 +1,12 @@
 # Projet de Recherche
 
 ## Description
-[Add your project description here]
+Desktop application for coverage path planning aimed at aquatic drones (USV).
+The system allows defining a water body area by geographic coordinates and computes
+an optimal coverage path to ensure full surface traversal — designed for autonomous
+water cleaning missions.
+
+Built with Qt6/QML for the UI and C++ for path planning logic.
 
 ## Requirements
 - Qt 6.8+
@@ -56,6 +61,18 @@ This project uses automated tools to maintain code quality:
 ### Formatting (clang-format)
 Auto-formats C++ code. Configuration in `.clang-format`.
 
+**Windows:** clang-format ships with Qt Creator. Add it to your PATH once:
+```bash
+# Add to ~/.bashrc
+export PATH="/c/Qt/Tools/QtCreator/bin/clang/bin:$PATH"
+```
+
+**Linux/Mac:**
+```bash
+sudo apt install clang-format   # Ubuntu/Debian
+brew install clang-format       # macOS
+```
+
 ```bash
 # Format a file
 clang-format -i src/myfile.cpp
@@ -68,6 +85,8 @@ VS Code users: Install "Clang-Format" extension for auto-format on save.
 
 ### Linting (clang-tidy)
 Static analysis tool. Configuration in `.clang-tidy`.
+
+**Windows:** clang-tidy also ships with Qt Creator (same PATH as above).
 
 ```bash
 # Analyze a file
