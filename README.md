@@ -1,7 +1,12 @@
 # Projet de Recherche
 
 ## Description
-[Add your project description here]
+Desktop application for coverage path planning aimed at aquatic drones (USV).
+The system allows defining a water body area by geographic coordinates and computes
+an optimal coverage path to ensure full surface traversal — designed for autonomous
+water cleaning missions.
+
+Built with Qt6/QML for the UI and C++ for path planning logic.
 
 ## Requirements
 - Qt 6.8+
@@ -49,12 +54,63 @@ cmake --build .
 # Linux/Mac: ./appprojet_de_recherche
 ```
 
+## Code Quality
+
+This project uses automated tools to maintain code quality:
+
+### Formatting (clang-format)
+Auto-formats C++ code. Configuration in `.clang-format`.
+
+**Windows:** clang-format ships with Qt Creator. Add it to your PATH once:
+```bash
+# Add to ~/.bashrc
+export PATH="/c/Qt/Tools/QtCreator/bin/clang/bin:$PATH"
+```
+
+**Linux/Mac:**
+```bash
+sudo apt install clang-format   # Ubuntu/Debian
+brew install clang-format       # macOS
+```
+
+```bash
+# Format a file
+clang-format -i src/myfile.cpp
+
+# Format all C++ files (handles spaces in paths)
+find . \( -name "*.cpp" -o -name "*.h" \) -print0 | xargs -0 clang-format -i
+```
+
+VS Code users: Install "Clang-Format" extension for auto-format on save.
+
+### Linting (clang-tidy)
+Static analysis tool. Configuration in `.clang-tidy`.
+
+**Windows:** clang-tidy also ships with Qt Creator (same PATH as above).
+
+```bash
+# Analyze a file
+clang-tidy src/myfile.cpp -- -std=c++17
+```
+
+### Pre-commit Hooks (Optional)
+Auto-formats code before each commit.
+
+```bash
+# Install hooks
+bash scripts/setup-hooks.sh
+
+# Skip temporarily
+git commit --no-verify
+```
+
+### Coding Guidelines
+See [docs/CODING_GUIDELINES.md](docs/CODING_GUIDELINES.md) for detailed style guide.
+
 ## Resources
 - [Qt Documentation](https://doc.qt.io/qt-6.8/gettingstarted.html)
 - [CMake with Qt](https://doc.qt.io/qt-6/cmake-get-started.html)
-
-## License
-MIT License - See [LICENSE.txt](LICENSE.txt)
+- [Coding Guidelines](docs/CODING_GUIDELINES.md)
 
 ## License
 MIT License - See [LICENSE.txt](LICENSE.txt)
