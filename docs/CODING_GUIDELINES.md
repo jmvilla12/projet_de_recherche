@@ -17,8 +17,8 @@ Both tools are configured in `.clang-format` and `.clang-tidy` files.
 # Format a single file
 clang-format -i src/myfile.cpp
 
-# Format all C++ files
-find . -name "*.cpp" -o -name "*.h" | xargs clang-format -i
+# Format all C++ files (handles spaces in paths)
+find . \( -name "*.cpp" -o -name "*.h" \) -print0 | xargs -0 clang-format -i
 
 # Run clang-tidy
 clang-tidy src/myfile.cpp -- -std=c++17

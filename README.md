@@ -77,8 +77,8 @@ brew install clang-format       # macOS
 # Format a file
 clang-format -i src/myfile.cpp
 
-# Format all C++ files
-find . -name "*.cpp" -o -name "*.h" | xargs clang-format -i
+# Format all C++ files (handles spaces in paths)
+find . \( -name "*.cpp" -o -name "*.h" \) -print0 | xargs -0 clang-format -i
 ```
 
 VS Code users: Install "Clang-Format" extension for auto-format on save.
