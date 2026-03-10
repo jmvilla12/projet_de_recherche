@@ -24,6 +24,48 @@ Item {
     ListModel { id: vertexModel }
     ListModel { id: restrictionModel }
 
+    function updatePolygonPaths() {
+        // Main polygon (green)
+        if (vertices.length >= 3) {
+            if (restrictionVertices.length >= 3) {
+                // Bridge technique: Combine paths to create a hole
+                // Main path (P1, P2... Pn, P1) -> Restriction path (R1, R2... Rn, R1) -> Return to P1
+                var combinedPath = [];
+                for (var i = 0; i < vertices.length; i++) combinedPath.push(vertices[i]);
+                combinedPath.push(vertices[0]); 
+                for (var j = 0; j < restrictionVertices.length; j++) combinedPath.push(restrictionVertices[j]);
+                combinedPath.push(restrictionVertices[0]);
+                combinedPath.push(vertices[0]);
+                drawnArea.path = combinedPath;
+            } else {
+                drawnArea.path = vertices;
+            }
+        } else {
+            drawnArea.path = [];
+        }
+        
+        // Restriction polygon (orange) - always show it for clarity
+        //restrictionPolygon.path = restrictionVertices; It's commented to avoid the filling :)
+    }
+
+    function removeMainPoint(index) {
+        var temp = vertices;
+        temp.splice(index, 1);
+        vertices = temp;
+        vertexModel.remove(index);
+        calculatedArea = calculatePolygonArea(vertices);
+        updatePolygonPaths();
+    }
+
+    function removeRestrictionPoint(index) {
+        var temp = restrictionVertices;
+        temp.splice(index, 1);
+        restrictionVertices = temp;
+        restrictionModel.remove(index);
+        restrictionArea = calculatePolygonArea(restrictionVertices);
+        updatePolygonPaths();
+    }
+
     function calculatePolygonArea(coords) {
         if (coords.length < 3) return 0;
         
@@ -77,16 +119,14 @@ Item {
             color: Qt.rgba(0.18, 0.55, 0.34, 0.25)
             border.color: "#2e7d32"
             border.width: 2
-            path: root.vertices
         }
 
         // Restriction area polygon (Orange)
         MapPolygon {
             id: restrictionPolygon
-            color: Qt.rgba(1.0, 0.55, 0.0, 0.3)
+            color: Qt.rgba(1.0, 0.55, 0.0, 0.2) // Lighter for "hole" feel
             border.color: "#ef6c00"
-            border.width: 2
-            path: root.restrictionVertices
+            border.width: 1
         }
 
         // Main vertex markers (Green)
@@ -98,8 +138,8 @@ Item {
                 anchorPoint.y: dot.height / 2
                 sourceItem: Rectangle {
                     id: dot
-                    width: 14
-                    height: 14
+                    width: 12
+                    height: 12
                     radius: 7
                     color: "#2e7d32"
                     border.color: "white"
@@ -117,8 +157,8 @@ Item {
                 anchorPoint.y: rdot.height / 2
                 sourceItem: Rectangle {
                     id: rdot
-                    width: 14
-                    height: 14
+                    width: 12
+                    height: 12
                     radius: 7
                     color: "#ef6c00"
                     border.color: "white"
@@ -129,6 +169,7 @@ Item {
 
         // TapHandler inside Map
         TapHandler {
+            id: mapTap
             enabled: root.drawingMode || root.drawingRestrictions
             onTapped: (eventPoint) => {
                 var coord = map.toCoordinate(Qt.point(eventPoint.position.x, eventPoint.position.y))
@@ -141,6 +182,19 @@ Item {
                     vertexModel.append({ "lat": coord.latitude, "lng": coord.longitude })
                     root.calculatedArea = calculatePolygonArea(root.vertices)
                 }
+                updatePolygonPaths();
+            }
+        }
+
+        // Standard zoom with mouse wheel
+        WheelHandler {
+            id: wheelHandler
+            target: map
+            onWheel: (event) => {
+                if (event.angleDelta.y > 0)
+                    map.zoomLevel = Math.min(map.zoomLevel + 0.2, map.maximumZoomLevel)
+                else
+                    map.zoomLevel = Math.max(map.zoomLevel - 0.2, map.minimumZoomLevel)
             }
         }
     }
@@ -319,6 +373,7 @@ Item {
                     root.drawingRestrictions = false
                     root.calculatedArea = 0
                     root.restrictionArea = 0
+                    updatePolygonPaths()
                 }
             }
         }

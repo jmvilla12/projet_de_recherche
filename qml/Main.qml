@@ -131,68 +131,183 @@ ApplicationWindow {
                         text: "No points selected"
                         font.pixelSize: 13
                         color: "#a0aec0"
-                        visible: mapView.vertices.length === 0
+                        visible: mapView.vertices.length === 0 && mapView.restrictionVertices.length === 0
                     }
 
-                    ListView {
-                        id: pointsList
+                    ColumnLayout {
                         anchors.fill: parent
-                        clip: true
-                        model: mapView.vertexModel
-                        spacing: 8
-                        visible: mapView.vertices.length > 0
+                        spacing: 16
+                        visible: mapView.vertices.length > 0 || mapView.restrictionVertices.length > 0
 
-                        delegate: Rectangle {
-                            width: pointsList.width
-                            height: 48
-                            color: "white"
-                            radius: 8
-                            border.color: "#edf2f7"
-                            border.width: 1
+                        // Section Cobertura
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+                            visible: mapView.vertices.length > 0
 
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.leftMargin: 12
-                                anchors.rightMargin: 12
-                                spacing: 12
+                            Label {
+                                text: "Puntos de Cobertura"
+                                font.pixelSize: 13
+                                font.bold: true
+                                color: "#2e7d32"
+                            }
 
-                                Rectangle {
-                                    width: 24
-                                    height: 24
-                                    radius: 12
-                                    color: "#ebf8ff"
-                                    
-                                    Label {
-                                        anchors.centerIn: parent
-                                        text: (index + 1)
-                                        font.pixelSize: 11
-                                        font.bold: true
-                                        color: "#3182ce"
-                                    }
-                                }
+                            ListView {
+                                id: mainPointsList
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: contentHeight
+                                Layout.maximumHeight: 250
+                                clip: true
+                                model: mapView.vertexModel
+                                spacing: 6
 
-                                Column {
-                                    Layout.fillWidth: true
-                                    Label {
-                                        text: "Punto #" + (index + 1)
-                                        font.pixelSize: 12
-                                        font.bold: true
-                                        color: "#2d3748"
-                                    }
-                                    Label {
-                                        text: model.lat.toFixed(6) + ", " + model.lng.toFixed(6)
-                                        font.pixelSize: 11
-                                        color: "#718096"
-                                        font.family: "Monospace"
+                                delegate: Rectangle {
+                                    width: mainPointsList.width
+                                    height: 44
+                                    color: "white"
+                                    radius: 6
+                                    border.color: "#edf2f7"
+                                    border.width: 1
+
+                                    HoverHandler { id: mainHover }
+
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        anchors.leftMargin: 10
+                                        anchors.rightMargin: 10
+                                        spacing: 10
+
+                                        Rectangle {
+                                            width: 20
+                                            height: 20
+                                            radius: 10
+                                            color: "#e8f5e9"
+                                            Label {
+                                                anchors.centerIn: parent
+                                                text: (index + 1)
+                                                font.pixelSize: 10
+                                                font.bold: true
+                                                color: "#2e7d32"
+                                            }
+                                        }
+
+                                        Column {
+                                            Layout.fillWidth: true
+                                            Label {
+                                                text: model.lat.toFixed(5) + ", " + model.lng.toFixed(5)
+                                                font.pixelSize: 11
+                                                color: "#4a5568"
+                                                font.family: "Monospace"
+                                            }
+                                        }
+
+                                        Button {
+                                            visible: mainHover.hovered
+                                            Layout.preferredWidth: 24
+                                            Layout.preferredHeight: 24
+                                            flat: true
+                                            padding: 0
+                                            
+                                            contentItem: Label {
+                                                text: "✕"
+                                                font.pixelSize: 14
+                                                color: "#e53935"
+                                                horizontalAlignment: Text.AlignHCenter
+                                                verticalAlignment: Text.AlignVCenter
+                                            }
+                                            
+                                            onClicked: mapView.removeMainPoint(index)
+                                        }
                                     }
                                 }
                             }
                         }
 
-                        footer: Item {
-                            width: pointsList.width
-                            height: 20
+                        // Section Restricciones
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+                            visible: mapView.restrictionVertices.length > 0
+
+                            Label {
+                                text: "Puntos de Restricción"
+                                font.pixelSize: 13
+                                font.bold: true
+                                color: "#ef6c00"
+                            }
+
+                            ListView {
+                                id: restPointsList
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: contentHeight
+                                Layout.maximumHeight: 200
+                                clip: true
+                                model: mapView.restrictionModel
+                                spacing: 6
+
+                                delegate: Rectangle {
+                                    width: restPointsList.width
+                                    height: 44
+                                    color: "white"
+                                    radius: 6
+                                    border.color: "#fff3e0"
+                                    border.width: 1
+
+                                    HoverHandler { id: restHover }
+
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        anchors.leftMargin: 10
+                                        anchors.rightMargin: 10
+                                        spacing: 10
+
+                                        Rectangle {
+                                            width: 20
+                                            height: 20
+                                            radius: 10
+                                            color: "#fff3e0"
+                                            Label {
+                                                anchors.centerIn: parent
+                                                text: (index + 1)
+                                                font.pixelSize: 10
+                                                font.bold: true
+                                                color: "#ef6c00"
+                                            }
+                                        }
+
+                                        Column {
+                                            Layout.fillWidth: true
+                                            Label {
+                                                text: model.lat.toFixed(5) + ", " + model.lng.toFixed(5)
+                                                font.pixelSize: 11
+                                                color: "#4a5568"
+                                                font.family: "Monospace"
+                                            }
+                                        }
+
+                                        Button {
+                                            visible: restHover.hovered
+                                            Layout.preferredWidth: 24
+                                            Layout.preferredHeight: 24
+                                            flat: true
+                                            padding: 0
+                                            
+                                            contentItem: Label {
+                                                text: "✕"
+                                                font.pixelSize: 14
+                                                color: "#e53935"
+                                                horizontalAlignment: Text.AlignHCenter
+                                                verticalAlignment: Text.AlignVCenter
+                                            }
+                                            
+                                            onClicked: mapView.removeRestrictionPoint(index)
+                                        }
+                                    }
+                                }
+                            }
                         }
+
+                        Item { Layout.fillHeight: true }
                     }
                 }
             }
