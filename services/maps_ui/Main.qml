@@ -24,15 +24,13 @@ ApplicationWindow {
                 text: qsTr("Coverage Path Planner") // Siempre usa qsTr() para internacionalización
                 color: "#e8eaf6"
 
-                // Centrado absoluto respecto al padre
                 anchors.centerIn: parent
 
-                // Configuración de fuente profesional
                 font {
-                    family: "Roboto"      // O la fuente corporativa que prefieras
-                    pixelSize: 16         // Los números pares suelen renderizar mejor en pantallas no-Retina
-                    weight: Font.DemiBold // Más elegante que un 'bold' genérico
-                    letterSpacing: 0.5    // Mejora la legibilidad en títulos
+                    family: "Roboto"
+                    pixelSize: 16
+                    weight: Font.DemiBold
+                    letterSpacing: 0.5
                 }
 
                 horizontalAlignment: Text.AlignHCenter
@@ -83,7 +81,7 @@ ApplicationWindow {
                     spacing: 4
                     
                     Label {
-                        text: "Puntos seleccionados"
+                        text: "Selected points"
                         font.pixelSize: 16
                         font.bold: true
                         color: "#1a2744"
@@ -146,7 +144,7 @@ ApplicationWindow {
                             visible: mapView.vertices.length > 0
 
                             Label {
-                                text: "Puntos de Cobertura"
+                                text: "Coverture points"
                                 font.pixelSize: 13
                                 font.bold: true
                                 color: "#2e7d32"
@@ -230,7 +228,7 @@ ApplicationWindow {
                             visible: mapView.restrictionVertices.length > 0
 
                             Label {
-                                text: "Puntos de Restricción"
+                                text: "Restrictions points"
                                 font.pixelSize: 13
                                 font.bold: true
                                 color: "#ef6c00"

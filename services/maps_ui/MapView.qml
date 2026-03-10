@@ -249,7 +249,7 @@ Item {
 
             Button {
                 id: drawBtn
-                text: root.drawingMode ? "Terminar Área" : "Dibujar Área"
+                text: root.drawingMode ? "Finish Area" : "Draw Area"
                 highlighted: root.drawingMode
                 font.bold: true
                 font.pixelSize: 13
@@ -298,7 +298,7 @@ Item {
             Button {
                 id: restrictionBtn
                 visible: root.drawingMode || root.drawingRestrictions || root.restrictionVertices.length > 0
-                text: root.drawingRestrictions ? "Terminar Limitantes" : "Dibujar Limitantes"
+                text: root.drawingRestrictions ? "Finish limits" : "Draw limits"
                 highlighted: root.drawingRestrictions
                 font.bold: true
                 font.pixelSize: 13
@@ -324,7 +324,7 @@ Item {
                 onClicked: {
                     if (root.drawingRestrictions) {
                         if (root.restrictionVertices.length < 3 && root.restrictionVertices.length > 0) {
-                            errorLabel.text = "Se necesitan al menos 3 puntos para la restricción"
+                            errorLabel.text = "At least 3 points to create a restriction"
                             return
                         }
                         errorLabel.text = ""
@@ -340,7 +340,7 @@ Item {
             // Clears polygon or cancels drawing in progress
             Button {
                 id: clearBtn
-                text: (root.drawingMode || root.drawingRestrictions) ? "Cancelar" : "Limpiar"
+                text: (root.drawingMode || root.drawingRestrictions) ? "Cancel" : "Erase all"
                 enabled: root.vertices.length > 0 || root.drawingMode || root.drawingRestrictions
                 font.bold: true
                 font.pixelSize: 13
@@ -397,7 +397,7 @@ Item {
             Label {
                 id: hint
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: root.drawingRestrictions ? "Dibujando Zona de Restricción" : "Dibujando Área de Cobertura"
+                text: root.drawingRestrictions ? "Drawing restriction zone" : "Dibujando coverture area"
                 color: "white"
                 font.pixelSize: 13
             }
@@ -405,7 +405,7 @@ Item {
             Label {
                 id: statusLabel
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: (root.drawingRestrictions ? root.restrictionVertices.length : root.vertices.length) + " puntos"
+                text: (root.drawingRestrictions ? root.restrictionVertices.length : root.vertices.length) + " points"
                 color: "#ccffffff"
                 font.pixelSize: 12
             }
