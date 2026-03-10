@@ -13,7 +13,7 @@ ApplicationWindow {
     title: "Coverage Path Planner"
 
     header: ToolBar {
-        background: Rectangle { color: "#1a2744" }
+        background: Rectangle { color: "#c94718" }
 
         RowLayout {
             anchors.fill: parent
@@ -21,11 +21,22 @@ ApplicationWindow {
             anchors.rightMargin: 16
 
             Label {
-                text: "Coverage Path Planner"
-                font.pixelSize: 15
-                font.bold: true
+                text: qsTr("Coverage Path Planner") // Siempre usa qsTr() para internacionalización
                 color: "#e8eaf6"
-                leftPadding: 4
+
+                // Centrado absoluto respecto al padre
+                anchors.centerIn: parent
+
+                // Configuración de fuente profesional
+                font {
+                    family: "Roboto"      // O la fuente corporativa que prefieras
+                    pixelSize: 16         // Los números pares suelen renderizar mejor en pantallas no-Retina
+                    weight: Font.DemiBold // Más elegante que un 'bold' genérico
+                    letterSpacing: 0.5    // Mejora la legibilidad en títulos
+                }
+
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
             }
 
             Item { Layout.fillWidth: true }
@@ -67,12 +78,34 @@ ApplicationWindow {
                 anchors.margins: 16
                 spacing: 12
 
-                Label {
-                    text: "Mission Controls"
-                    font.pixelSize: 16
-                    font.bold: true
-                    color: "#1a2744"
-                    Layout.topMargin: 4
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 4
+                    
+                    Label {
+                        text: "Puntos seleccionados"
+                        font.pixelSize: 16
+                        font.bold: true
+                        color: "#1a2744"
+                        Layout.topMargin: 4
+                    }
+
+                    Label {
+                        visible: mapView.vertices.length >= 3
+                        text: {
+                            var area = mapView.netArea;
+                            var formattedArea = "";
+                            if (area > 1000000) {
+                                formattedArea = (area / 1000000).toLocaleString(Qt.locale(), 'f', 2) + " km²";
+                            } else {
+                                formattedArea = area.toLocaleString(Qt.locale(), 'f', 2) + " m²";
+                            }
+                            return "Area: " + formattedArea;
+                        }
+                        font.pixelSize: 14
+                        font.bold: true
+                        color: "#2e7d32"
+                    }
                 }
 
                 Rectangle {
