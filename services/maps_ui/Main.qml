@@ -306,6 +306,34 @@ ApplicationWindow {
                         }
 
                         Item { Layout.fillHeight: true }
+
+                        Button {
+                            id: exportBtn
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 50
+                            text: "Export"
+                            font.bold: true
+                            font.pixelSize: 14
+                            
+                            contentItem: Label {
+                                text: exportBtn.text
+                                font: exportBtn.font
+                                color: "white"
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+
+                            background: Rectangle {
+                                radius: 8
+                                color: "#1a237e" // Deep Indigo
+                                opacity: exportBtn.pressed ? 0.8 : 1.0
+                            }
+
+                            onClicked: {
+                                // Placeholder for export functionality
+                                console.log("Export button clicked - No action yet")
+                            }
+                        }
                     }
                 }
             }
