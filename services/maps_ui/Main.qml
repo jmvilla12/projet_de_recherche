@@ -238,17 +238,31 @@ ApplicationWindow {
                                 id: restPointsList
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: contentHeight
-                                Layout.maximumHeight: 200
+                                Layout.maximumHeight: 250
                                 clip: true
                                 model: mapView.restrictionModel
                                 spacing: 6
 
+                                section.property: "zoneIndex"
+                                section.criteria: ViewSection.FullString
+                                section.delegate: Item {
+                                    width: restPointsList.width
+                                    height: 24
+                                    Label {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: (section == "-1") ? "Siguiente Zona (Dibujando)" : "Zona de Restricción " + (parseInt(section) + 1)
+                                        font.pixelSize: 11
+                                        font.bold: true
+                                        color: (section == "-1") ? "#fb8c00" : "#ef6c00"
+                                    }
+                                }
+
                                 delegate: Rectangle {
                                     width: restPointsList.width
-                                    height: 44
+                                    height: 40
                                     color: "white"
                                     radius: 6
-                                    border.color: "#fff3e0"
+                                    border.color: (model.zoneIndex == -1) ? "#fff3e0" : "#ffe0b2"
                                     border.width: 1
 
                                     HoverHandler { id: restHover }
@@ -260,27 +274,25 @@ ApplicationWindow {
                                         spacing: 10
 
                                         Rectangle {
-                                            width: 20
-                                            height: 20
-                                            radius: 10
-                                            color: "#fff3e0"
+                                            width: 18
+                                            height: 18
+                                            radius: 9
+                                            color: (model.zoneIndex == -1) ? "#fff3e0" : "#ffe0b2"
                                             Label {
                                                 anchors.centerIn: parent
                                                 text: (index + 1)
-                                                font.pixelSize: 10
+                                                font.pixelSize: 9
                                                 font.bold: true
                                                 color: "#ef6c00"
                                             }
                                         }
 
-                                        Column {
+                                        Label {
                                             Layout.fillWidth: true
-                                            Label {
-                                                text: model.lat.toFixed(5) + ", " + model.lng.toFixed(5)
-                                                font.pixelSize: 11
-                                                color: "#4a5568"
-                                                font.family: "Monospace"
-                                            }
+                                            text: model.lat.toFixed(5) + ", " + model.lng.toFixed(5)
+                                            font.pixelSize: 11
+                                            color: "#4a5568"
+                                            font.family: "Monospace"
                                         }
 
                                         Button {
