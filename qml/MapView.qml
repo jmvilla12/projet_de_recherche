@@ -13,6 +13,7 @@ Item {
     signal areaFinished(var coordinates)
 
     // Backing model for vertex markers — kept in sync with vertices array
+    property alias vertexModel: vertexModel
     ListModel { id: vertexModel }
 
     Map {
