@@ -13,7 +13,8 @@ ApplicationWindow {
     title: "Coverage Path Planner"
 
     header: ToolBar {
-        background: Rectangle { color: "#c94718" }
+        implicitHeight: 50
+        background: Rectangle { color: "#000000" }
 
         RowLayout {
             anchors.fill: parent
@@ -21,16 +22,17 @@ ApplicationWindow {
             anchors.rightMargin: 16
 
             Label {
-                text: qsTr("Coverage Path Planner") // Siempre usa qsTr() para internacionalización
+                text: qsTr("Planificateur de trajectoire de couverture")
                 color: "#e8eaf6"
 
                 anchors.centerIn: parent
 
                 font {
-                    family: "Roboto"
-                    pixelSize: 16
+                    capitalization: Font.AllUppercase
+                    family: "sans-serif"
+                    pixelSize: 20
                     weight: Font.DemiBold
-                    letterSpacing: 0.5
+                    letterSpacing: 0.3
                 }
 
                 horizontalAlignment: Text.AlignHCenter
@@ -40,9 +42,9 @@ ApplicationWindow {
             Item { Layout.fillWidth: true }
 
             Label {
-                text: "v0.1"
+                text: "13-mars"
                 font.pixelSize: 11
-                color: "#7986cb"
+                color: "#e8eaf6"
             }
         }
     }
