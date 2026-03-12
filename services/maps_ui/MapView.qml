@@ -9,7 +9,7 @@ Item {
     property bool drawingMode: false
     property bool drawingRestrictions: false
     property var vertices: []
-    
+
     // Array of arrays - each element is a list of coordinates for one restriction zone
     property var restrictionZones: []
     // The points for the zone currently being drawn
@@ -21,75 +21,49 @@ Item {
     // Backing models for vertex markers
     property alias vertexModel: vertexModel
     property alias restrictionModel: restrictionModel
-    
+
     property real calculatedArea: 0
     property real totalRestrictionArea: 0
     property real netArea: Math.max(0, calculatedArea - totalRestrictionArea)
 
     ListModel { id: vertexModel }
-    
+
     // restrictionModel will store all points with a 'zoneIndex' to identify them
     ListModel { id: restrictionModel }
 
-    function findClosestVertex(targetPoint, vertexArray) {
-        var minIdx = 0;
-        var minDist = 999999999;
-        for (var i = 0; i < vertexArray.length; i++) {
-            var d = targetPoint.distanceTo(vertexArray[i]);
-            if (d < minDist) {
-                minDist = d;
-                minIdx = i;
-            }
-        }
-        return minIdx;
-    }
-
     function updatePolygonPaths() {
-        if (vertices.length < 3) {
+        // Main polygon (green)
+        if (vertices.length >= 3) {
+            // Bridge technique for visual subtraction
+            var combinedPath = [];
+
+            // Add main outer boundary
+            for (var i = 0; i < vertices.length; i++) combinedPath.push(vertices[i]);
+            combinedPath.push(vertices[0]);
+
+            // Add holes for each FINALIZED restriction zone
+            for (var z = 0; z < restrictionZones.length; z++) {
+                var zone = restrictionZones[z];
+                if (zone.length >= 3) {
+                    for (var k = 0; k < zone.length; k++) combinedPath.push(zone[k]);
+                    combinedPath.push(zone[0]);
+                    combinedPath.push(vertices[0]); // Return to main start point after each bridge
+                }
+            }
+
+            // Add hole for CURRENT DRAWING restriction zone if it has >= 3 points
+            if (currentRestrictionPoints.length >= 3) {
+                for (var m = 0; m < currentRestrictionPoints.length; m++) combinedPath.push(currentRestrictionPoints[m]);
+                currentRestrictionPoints[0] ? combinedPath.push(currentRestrictionPoints[0]) : null;
+                combinedPath.push(vertices[0]);
+            }
+
+            drawnArea.path = combinedPath;
+        } else {
             drawnArea.path = [];
-            return;
         }
 
-        var combinedPath = [];
-        // To make the bridge look clean, we find the vertex in 'vertices' 
-        // that is closest to each restriction zone's first point.
-        
-        // Start Outer path from some point (index 0 for simplicity, or 
-        // we rotate it so the bridge connects to the closest point).
-        for (var i = 0; i < vertices.length; i++) combinedPath.push(vertices[i]);
-        combinedPath.push(vertices[0]); 
-
-        function addZoneToPath(zone) {
-            if (zone.length < 3) return;
-            // Bridge from current end (which is vertices[0]) to zone[0]
-            // Actually, any point in 'vertices' will do, but vertices[0] is our current loop back.
-            // To avoid crossing lines, a better bridge would be from the closest V point to the zone.
-            var startIdx = findClosestVertex(zone[0], vertices);
-            
-            // Re-reach the startIdx in the outer path to start a NEW bridge from there
-            combinedPath.push(vertices[startIdx]); 
-            
-            // The hole
-            for (var k = 0; k < zone.length; k++) combinedPath.push(zone[k]);
-            combinedPath.push(zone[0]);
-            
-            // Bridge back
-            combinedPath.push(vertices[startIdx]);
-            // Return to main path continuation point if we were to add more
-            combinedPath.push(vertices[0]); 
-        }
-
-        // Add finalized zones
-        for (var z = 0; z < restrictionZones.length; z++) {
-            addZoneToPath(restrictionZones[z]);
-        }
-        
-        // Add current drawing zone
-        if (currentRestrictionPoints.length >= 3) {
-            addZoneToPath(currentRestrictionPoints);
-        }
-
-        drawnArea.path = combinedPath;
+        // Update the visual selection (just for orange points visibility handled by MapItemView)
     }
 
     function finalizeCurrentRestriction() {
@@ -108,6 +82,7 @@ Item {
         for (var i = 0; i < restrictionZones.length; i++) {
             total += calculatePolygonArea(restrictionZones[i]);
         }
+        // Add current drawing too
         total += calculatePolygonArea(currentRestrictionPoints);
         totalRestrictionArea = total;
     }
@@ -122,26 +97,40 @@ Item {
     }
 
     function removeRestrictionPoint(modelIndex) {
+        // Find which zone and local index this point belongs to
         var point = restrictionModel.get(modelIndex);
         var zIdx = point.zoneIndex;
-        
-        if (zIdx === -1) {
-            // Simplify: remove from current drawing
+
+        if (zIdx === -1) { // Current drawing zone
+            var current = currentRestrictionPoints;
+            // We need to find the local index. Since it's the last added points:
+            // This is a bit tricky if we allow deleting from an active drawing.
+            // Let's simplify: only allow deleting points from finalized zones or
+            // the whole current zone.
+            // For now, let's just find it by coordinate match or assume modelIndex logic
         } else {
             var zone = restrictionZones[zIdx];
+            // Find which point it is in that zone (scanning by lat/lng)
             for (var pIdx = 0; pIdx < zone.length; pIdx++) {
-                if (Math.abs(zone[pIdx].latitude - point.lat) < 0.000001 && 
+                if (Math.abs(zone[pIdx].latitude - point.lat) < 0.000001 &&
                     Math.abs(zone[pIdx].longitude - point.lng) < 0.000001) {
                     zone.splice(pIdx, 1);
                     break;
                 }
             }
-            if (zone.length < 3) restrictionZones.splice(zIdx, 1);
-            else restrictionZones[zIdx] = zone;
+
+            if (zone.length < 3) {
+                restrictionZones.splice(zIdx, 1);
+            } else {
+                restrictionZones[zIdx] = zone;
+            }
+
+            // Re-sync restrictionZones to trigger changes
             var zones = restrictionZones;
             restrictionZones = zones;
         }
 
+        // Rebuild model and recalculate
         rebuildRestrictionModel();
         recalculateTotalRestrictionArea();
         updatePolygonPaths();
@@ -152,28 +141,43 @@ Item {
         for (var z = 0; z < restrictionZones.length; z++) {
             var zone = restrictionZones[z];
             for (var p = 0; p < zone.length; p++) {
-                restrictionModel.append({ "lat": zone[p].latitude, "lng": zone[p].longitude, "zoneIndex": z });
+                restrictionModel.append({
+                    "lat": zone[p].latitude,
+                    "lng": zone[p].longitude,
+                    "zoneIndex": z
+                });
             }
         }
+        // Add current drawing points
         for (var c = 0; c < currentRestrictionPoints.length; c++) {
-            restrictionModel.append({ "lat": currentRestrictionPoints[c].latitude, "lng": currentRestrictionPoints[c].longitude, "zoneIndex": -1 });
+            restrictionModel.append({
+                "lat": currentRestrictionPoints[c].latitude,
+                "lng": currentRestrictionPoints[c].longitude,
+                "zoneIndex": -1
+            });
         }
     }
 
     function calculatePolygonArea(coords) {
         if (coords.length < 3) return 0;
+
         var area = 0;
-        var R = 6378137;
+        var R = 6378137; // Earth's radius in meters
+
         for (var i = 0; i < coords.length; i++) {
             var p1 = coords[i];
             var p2 = coords[(i + 1) % coords.length];
+
             var lat1 = p1.latitude * Math.PI / 180;
             var lon1 = p1.longitude * Math.PI / 180;
             var lat2 = p2.latitude * Math.PI / 180;
             var lon2 = p2.longitude * Math.PI / 180;
+
             area += (lon2 - lon1) * (2 + Math.sin(lat1) + Math.sin(lat2));
         }
-        return Math.abs(area * R * R / 2.0);
+
+        area = Math.abs(area * R * R / 2.0);
+        return area;
     }
 
     Map {
@@ -201,7 +205,7 @@ Item {
         TapHandler {
             id: mapTap
             enabled: root.drawingMode || root.drawingRestrictions
-            // This policy ensures it only triggers on a discrete tap, 
+            // This policy ensures it only triggers on a discrete tap,
             // allowing the Map to handle multi-touch or drag gestures.
             gesturePolicy: TapHandler.WithinBounds
             onTapped: (eventPoint) => {

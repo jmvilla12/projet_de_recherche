@@ -146,7 +146,7 @@ ApplicationWindow {
                             visible: mapView.vertices.length > 0
 
                             Label {
-                                text: "Coverture points"
+                                text: "Points de couverture"
                                 font.pixelSize: 13
                                 font.bold: true
                                 color: "#2e7d32"
@@ -230,7 +230,7 @@ ApplicationWindow {
                             visible: mapView.restrictionVertices.length > 0
 
                             Label {
-                                text: "Restrictions points"
+                                text: "Points restreints"
                                 font.pixelSize: 13
                                 font.bold: true
                                 color: "#ef6c00"
@@ -252,7 +252,7 @@ ApplicationWindow {
                                     height: 24
                                     Label {
                                         anchors.verticalCenter: parent.verticalCenter
-                                        text: (section == "-1") ? "Siguiente Zona (Dibujando)" : "Zona de Restricción " + (parseInt(section) + 1)
+                                        text: (section == "-1") ? "Zone suivante (en cours de dessin)" : "Zone restreinte " + (parseInt(section) + 1)
                                         font.pixelSize: 11
                                         font.bold: true
                                         color: (section == "-1") ? "#fb8c00" : "#ef6c00"
@@ -345,7 +345,7 @@ ApplicationWindow {
 
                             onClicked: {
                                 // Placeholder for export functionality
-                                console.log("Export button clicked - No action yet")
+                                console.log("Bouton d’export cliqué – Pas d’action pour le moment")
                             }
                         }
                     }
