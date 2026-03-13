@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtLocation
 import QtPositioning
+import QtQuick.Effects
 
 Item {
     id: root
@@ -223,11 +224,11 @@ Item {
             }
         }
 
-        // Drawn area polygon (Green)
+        // Drawn area polygon (Blue)
         MapPolygon {
             id: drawnArea
-            color: Qt.rgba(0.18, 0.55, 0.34, 0.25)
-            border.color: "#2e7d32"
+            color: Qt.rgba(0.098, 0.463, 0.824, 0.25) // Blue #1976d2 with opacity
+            border.color: "#1976d2"
             border.width: 2
         }
 
@@ -237,7 +238,7 @@ Item {
             delegate: MapQuickItem {
                 coordinate: QtPositioning.coordinate(lat, lng)
                 anchorPoint.x: 6; anchorPoint.y: 6
-                sourceItem: Rectangle { width: 12; height: 12; radius: 6; color: "#2e7d32"; border.color: "white"; border.width: 2 }
+                sourceItem: Rectangle { width: 12; height: 12; radius: 6; color: "#1976d2"; border.color: "white"; border.width: 2 }
             }
         }
 
@@ -246,7 +247,7 @@ Item {
             delegate: MapQuickItem {
                 coordinate: QtPositioning.coordinate(lat, lng)
                 anchorPoint.x: 6; anchorPoint.y: 6
-                sourceItem: Rectangle { width: 12; height: 12; radius: 6; color: "#ef6c00"; border.color: "white"; border.width: 2 }
+                sourceItem: Rectangle { width: 12; height: 12; radius: 6; color: "#d32f2f"; border.color: "white"; border.width: 2 }
             }
         }
 
@@ -281,16 +282,16 @@ Item {
             spacing: 12
             Button {
                 id: drawBtn
-                text: root.drawingMode ? "Finish Area" : "Draw Area"
+                text: root.drawingMode ? "Finaliser la zone de couverture" : "Dessiner les points de couverture"
                 highlighted: root.drawingMode; font.bold: true; font.pixelSize: 13
                 enabled: !root.drawingRestrictions
                 background: Rectangle {
                     implicitWidth: 120; implicitHeight: 40; radius: 8
-                    color: root.drawingMode ? "#1e88e5" : (drawBtn.hovered ? "#43a047" : (drawBtn.enabled ? "#2e7d32" : "#e0e0e0"))
+                    color: root.drawingMode ? "#1e88e5" : (drawBtn.hovered ? "#1976d2" : (drawBtn.enabled ? "#1565c0" : "#e0e0e0"))
                 }
                 onClicked: {
                     if (root.drawingMode) {
-                        if (root.vertices.length < 3) { errorLabel.text = "Se necesitan al menos 3 puntos"; return }
+                        if (root.vertices.length < 3) { errorLabel.text = "Au moins 3 points sont nécessaires"; return }
                         errorLabel.text = ""; root.drawingMode = false
                     } else {
                         errorLabel.text = ""; root.vertices = []; root.restrictionZones = []; root.currentRestrictionPoints = []
@@ -302,17 +303,17 @@ Item {
 
             Button {
                 id: restrictionBtn
-                visible: root.drawingMode || root.drawingRestrictions || root.restrictionZones.length > 0 || root.currentRestrictionPoints.length > 0
-                text: root.drawingRestrictions ? "Finish limit" : "Draw limits"
+                visible: (root.vertices.length >= 3 && !root.drawingMode) || root.drawingRestrictions || root.restrictionZones.length > 0
+                text: root.drawingRestrictions ? "Finaliser la zone de restriction" : "Dessiner les limites"
                 highlighted: root.drawingRestrictions; font.bold: true; font.pixelSize: 13
                 background: Rectangle {
                     implicitWidth: 140; implicitHeight: 40; radius: 8
-                    color: root.drawingRestrictions ? "#ef6c00" : (restrictionBtn.hovered ? "#ffa726" : "#fb8c00")
+                    color: root.drawingRestrictions ? "#d32f2f" : (restrictionBtn.hovered ? "#f44336" : "#e53935")
                 }
                 onClicked: {
                     if (root.drawingRestrictions) {
                         if (root.currentRestrictionPoints.length < 3 && root.currentRestrictionPoints.length > 0) {
-                            errorLabel.text = "At least 3 points to create a restriction"; return
+                            errorLabel.text = "Au moins 3 points sont nécessaires"; return
                         }
                         root.finalizeCurrentRestriction()
                         errorLabel.text = ""; root.drawingRestrictions = false
@@ -324,7 +325,7 @@ Item {
 
             Button {
                 id: clearBtn
-                text: (root.drawingMode || root.drawingRestrictions) ? "Cancel" : "Erase all"
+                text: (root.drawingMode || root.drawingRestrictions) ? "Annuler" : "Tout effacer"
                 enabled: root.vertices.length > 0 || root.drawingMode || root.drawingRestrictions
                 font.bold: true; font.pixelSize: 13
                 background: Rectangle {
@@ -340,16 +341,50 @@ Item {
         }
     }
 
-    // Drawing mode indicator
+    // Drawing mode indicator (Polished Glassmorphism)
     Rectangle {
-        anchors.top: parent.top; anchors.horizontalCenter: parent.horizontalCenter; anchors.topMargin: 12
+        anchors.top: parent.top; anchors.horizontalCenter: parent.horizontalCenter; anchors.topMargin: 20
         visible: root.drawingMode || root.drawingRestrictions
-        color: root.drawingRestrictions ? "#ddfb8c00" : "#dd1565a8"; radius: 6
-        width: hint.implicitWidth + 24; height: hint.implicitHeight + statusLabel.implicitHeight + 20
+        
+        color: root.drawingRestrictions ? Qt.rgba(0.827, 0.184, 0.184, 0.85) : Qt.rgba(0.098, 0.463, 0.824, 0.85)
+        radius: 12
+        width: Math.max(hint.implicitWidth, statusLabel.implicitWidth) + 40
+        height: hint.implicitHeight + statusLabel.implicitHeight + 24
+        
+        layer.enabled: true
+        layer.effect: MultiEffect {
+            shadowEnabled: true
+            shadowColor: "#30000000"
+            shadowBlur: 0.1
+            shadowVerticalOffset: 3
+        }
+
         Column {
-            anchors.centerIn: parent; spacing: 2
-            Label { id: hint; anchors.horizontalCenter: parent.horizontalCenter; text: root.drawingRestrictions ? "Drawing restriction zone" : "Dibujando coverture area"; color: "white"; font.pixelSize: 13 }
-            Label { id: statusLabel; anchors.horizontalCenter: parent.horizontalCenter; text: (root.drawingRestrictions ? root.currentRestrictionPoints.length : root.vertices.length) + " points"; color: "#ccffffff"; font.pixelSize: 12 }
+            anchors.centerIn: parent; spacing: 4
+            Label { 
+                id: hint
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: root.drawingRestrictions ? "Dessin de la zone de restriction" : "Dessin de la zone de couverture"
+                color: "white"
+                font.pixelSize: 14
+                font.bold: true
+            }
+            Label { 
+                id: statusLabel
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: (root.drawingRestrictions ? root.currentRestrictionPoints.length : root.vertices.length) + " points posés"
+                color: "#f0f0f0"
+                font.pixelSize: 12
+            }
+        }
+
+        // Animated pulse effect for drawing
+        Rectangle {
+            anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; anchors.leftMargin: 12
+            width: 10; height: 10; radius: 5; color: "white"
+            OpacityAnimator on opacity {
+                from: 1.0; to: 0.2; duration: 800; loops: Animation.Infinite
+            }
         }
     }
 }

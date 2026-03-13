@@ -14,6 +14,8 @@ qt_add_qml_module(app_maps_ui
         Main.qml
         MapView.qml
         app_icon.png
+        LogoIMT.png
+        LogoIMTInverso.png
 )
 
 target_link_libraries(app_maps_ui
