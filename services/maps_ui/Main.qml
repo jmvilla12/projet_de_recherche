@@ -173,28 +173,169 @@ ApplicationWindow {
                     width: parent.width
                     spacing: 20
 
-                    Column {
+                    RowLayout {
                         width: parent.width
-                        spacing: 4
+                        spacing: 12
 
-                        Label {
-                            text: "Planificateur"
-                            font.pixelSize: 18
-                            font.bold: true
-                            color: "#1a2744"
-                            font.letterSpacing: -0.2
+                        Column {
+                            Layout.fillWidth: true
+                            spacing: 4
+
+                            Label {
+                                text: "Planificateur"
+                                font.pixelSize: 18
+                                font.bold: true
+                                color: "#1a2744"
+                                font.letterSpacing: -0.2
+                            }
+
+                            Label {
+                                visible: mapView.vertices.length >= 3
+                                text: {
+                                    var area = mapView.netArea;
+                                    if (area > 1000000) return "Surface : " + (area / 1000000).toLocaleString(Qt.locale(), 'f', 2) + " km²";
+                                    return "Surface : " + area.toLocaleString(Qt.locale(), 'f', 2) + " m²";
+                                }
+                                font.pixelSize: 14
+                                font.bold: true
+                                color: "#2e7d32"
+                            }
                         }
 
-                        Label {
-                            visible: mapView.vertices.length >= 3
-                            text: {
-                                var area = mapView.netArea;
-                                if (area > 1000000) return "Surface : " + (area / 1000000).toLocaleString(Qt.locale(), 'f', 2) + " km²";
-                                return "Surface : " + area.toLocaleString(Qt.locale(), 'f', 2) + " m²";
+                        Button {
+                            id: relocateBtn
+                            implicitWidth: 28
+                            implicitHeight: 28
+                            flat: true
+
+                            background: Rectangle {
+                                color: relocateBtn.pressed ? "#e0e6ed" : (relocateBtn.hovered ? "#f0f4f8" : "white")
+                                border.color: "#d1dce5"
+                                border.width: 1
+                                radius: 10
+                                layer.enabled: true
+                                layer.effect: MultiEffect {
+                                    shadowEnabled: true
+                                    shadowColor: "#15000000"
+                                    shadowBlur: 0.1
+                                    shadowVerticalOffset: 1
+                                }
                             }
-                            font.pixelSize: 14
-                            font.bold: true
-                            color: "#2e7d32"
+
+                            contentItem: Item {
+                                Image {
+                                    anchors.centerIn: parent
+                                    source: "/qt/qml/projet_de_recherche/assets/icons/Location_Searching.svg"
+                                    fillMode: Image.PreserveAspectFit
+                                    sourceSize: Qt.size(16, 16)
+                                    opacity: 0.8
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        id: droneStatusCard
+                        width: parent.width
+                        height: 180
+                        color: "white"
+                        radius: 12
+                        border.color: "#edf2f7"
+                        border.width: 1
+
+                        layer.enabled: true
+                        layer.effect: MultiEffect {
+                            shadowEnabled: true
+                            shadowColor: "#08000000"
+                            shadowBlur: 0.1
+                            shadowVerticalOffset: 2
+                        }
+
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 16
+                            spacing: 0
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 10
+
+                                Row {
+                                    spacing: 8
+                                    Image {
+                                        source: "/qt/qml/projet_de_recherche/assets/icons/wifi_off.svg"
+                                        sourceSize: Qt.size(16, 16)
+                                        opacity: 0.7
+                                    }
+                                    Label {
+                                        text: "Déconnecté"
+                                        font.pixelSize: 14
+                                        font.bold: false
+                                        color: "#070B0F"
+                                    }
+                                }
+
+                                Item { Layout.fillWidth: true }
+
+                                Button {
+                                    id: connectBtn
+                                    implicitWidth: 110
+                                    implicitHeight: 30
+                                    
+                                    background: Rectangle {
+                                        color: connectBtn.hovered ? "#e1e9f0" : "#f0f5f9"
+                                        border.color: "#d1dce5"
+                                        border.width: 1
+                                        radius: 8
+                                    }
+                                    
+                                    contentItem: Item {
+                                        Row {
+                                            anchors.centerIn: parent
+                                            spacing: 8
+                                            Image {
+                                                source: "/qt/qml/projet_de_recherche/assets/icons/wifi_off.svg"
+                                                sourceSize: Qt.size(15, 15)
+                                                opacity: 0.8
+                                                anchors.verticalCenter: parent.verticalCenter
+                                            }
+                                            Label {
+                                                text: "Connecter"
+                                                font.pixelSize: 13
+                                                font.bold: true
+                                                color: "#070B0F"
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                font.letterSpacing: -0.2
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            Item { Layout.fillHeight: true }
+
+                            Column {
+                                Layout.fillWidth: true
+                                Layout.alignment: Qt.AlignHCenter
+                                spacing: 12
+
+                                Image {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    source: "/qt/qml/projet_de_recherche/assets/icons/wifi_off.svg"
+                                    sourceSize: Qt.size(48, 48)
+                                    opacity: 0.1
+                                }
+
+                                Label {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: "Connectez votre drone pour consulter"
+                                    font.pixelSize: 13
+                                    color: "#5f6368"
+                                    horizontalAlignment: Text.AlignHCenter
+                                }
+                            }
+                            
+                            Item { Layout.fillHeight: true }
                         }
                     }
 
@@ -308,3 +449,4 @@ ApplicationWindow {
         }
     }
 }
+

@@ -17,6 +17,7 @@ qt_add_qml_module(app_maps_ui
         assets/images/LogoIMT.png
         assets/images/LogoIMTInverso.png
         assets/icons/wifi_off.svg
+        assets/icons/Location_Searching.svg
     RESOURCES
         assets/fonts/Geist-Regular.ttf
         assets/fonts/Geist-Medium.ttf
