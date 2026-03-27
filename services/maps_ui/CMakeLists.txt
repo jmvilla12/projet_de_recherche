@@ -13,9 +13,16 @@ qt_add_qml_module(app_maps_ui
     QML_FILES
         Main.qml
         MapView.qml
-        app_icon.png
-        LogoIMT.png
-        LogoIMTInverso.png
+        assets/images/app_icon.png
+        assets/images/LogoIMT.png
+        assets/images/LogoIMTInverso.png
+        assets/icons/wifi_off.svg
+    RESOURCES
+        assets/fonts/Geist-Regular.ttf
+        assets/fonts/Geist-Medium.ttf
+        assets/fonts/Geist-Bold.ttf
+        assets/fonts/Geist-SemiBold.ttf
+        assets/fonts/Geist-Light.ttf
 )
 
 target_link_libraries(app_maps_ui

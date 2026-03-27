@@ -14,12 +14,16 @@ ApplicationWindow {
     title: "PDR"
 
     header: ToolBar {
-        implicitHeight: 60
+        implicitHeight: 50 // Un poco más de aire para que luzca mejor
 
         background: Rectangle {
-            gradient: Gradient {
-                GradientStop { position: 0.0; color: "#2c3e50" }
-                GradientStop { position: 1.0; color: "#000000" }
+            color: "#FFFFFF"
+            // Opcional: una línea fina gris abajo para separar del mapa
+            Rectangle {
+                anchors.bottom: parent.bottom
+                width: parent.width
+                height: 1
+                color: "#D9DFE4"
             }
         }
 
@@ -28,35 +32,109 @@ ApplicationWindow {
             anchors.leftMargin: 16
             anchors.rightMargin: 16
 
-            Image {
-                id: logo
-                source: "/qt/qml/projet_de_recherche/LogoIMTInverso.png"
-                height: parent.height * 0.6
-                fillMode: Image.PreserveAspectFit
+            // --- PARTE IZQUIERDA: LOGO Y TÍTULOS ---
+            Row {
+                id: headerContent
                 anchors.verticalCenter: parent.verticalCenter
-                anchors.left: parent.left
-            }
+                spacing: 10
 
-            Label {
-                text: qsTr("Planificateur de trajectoire de couverture")
-                color: "#e8eaf6"
-                anchors.centerIn: parent //centrao
+                Image {
+                    id: logo
+                    source: "/qt/qml/projet_de_recherche/assets/images/LogoIMT.png"
+                    height: 40
+                    fillMode: Image.PreserveAspectFit
+                }
 
-                font {
-                    capitalization: Font.AllUppercase
-                    family: "Verdana"
-                    pixelSize: 20
-                    weight: Font.DemiBold
-                    letterSpacing: 0.2
+                Column {
+                    spacing: -2
+                    Label {
+                        text: "Drone Path Planner"
+                        color: "#000000"
+                        font { family: "Geist Sans"; pixelSize: 18; weight: Font.DemiBold; letterSpacing: -0.5}
+                    }
+                    Label {
+                        text: "Planificateur de couverture"
+                        color: "#5f6368"
+                        font { family: "Geist Sans"; pixelSize: 12; letterSpacing: -0.5 }
+                    }
                 }
             }
 
-            Label {
-                text: "13-mars"
-                font.pixelSize: 11
-                color: "#e8eaf6"
-                anchors.verticalCenter: parent.verticalCenter
+            // --- PARTE DERECHA: ESTADO E INFORMACIÓN ---
+            Row {
                 anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 20
+
+                // Indicador de Desconectado (estilo cápsula)
+                Rectangle {
+                    width: 130
+                    height: 24
+                    color: "#E6ECF1"
+                    radius: 16
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: 8
+                        Image{
+                            source: "/qt/qml/projet_de_recherche/assets/icons/wifi_off.svg"
+                            sourceSize.width: 14
+                            sourceSize.height: 14
+                        }
+                            // Icono simple o usa un Image
+                        Text {
+                            text: "Déconnecté"
+                            color: "#51565A"
+                            font { family: "Geist Sans"; pixelSize: 12; letterSpacing: -0.5}
+
+                        }
+                    }
+                }
+
+                // Texto de estado
+                Label {
+                    text: "Aucune zone sélectionnée"
+                    color: "#5f6368"
+                    anchors.verticalCenter: parent.verticalCenter
+                    font { family: "Geist Sans"; pixelSize: 14; letterSpacing: -0.5}
+                }
+
+                // Icono de información con Hover
+                Label {
+                    text: "ⓘ"
+                    font.pixelSize: 22
+                    color: infoHover.hovered ? "#000000" : "#5f6368"
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    HoverHandler { id: infoHover }
+
+                    // Cuadrito (Tooltip) que aparece al pasar el ratón
+                    Rectangle {
+                        visible: infoHover.hovered
+                        parent: Overlay.overlay // Para que aparezca sobre todo
+                        x: infoHover.point.position.x - width/2
+                        y: 65 // Debajo del toolbar
+                        width: 180
+                        height: 50
+                        color: "#333333"
+                        radius: 4
+
+                        Column {
+                            anchors.centerIn: parent
+                            Text {
+                                text: "Créé par:"
+                                color: "white"; font.pixelSize: 10; font.bold: true
+                                anchors.horizontalCenter: parent.horizontalCenter
+                            }
+                            Text {
+                                text: "Nombre de los Creadores"
+                                color: "white"; font.pixelSize: 12
+                                anchors.horizontalCenter: parent.horizontalCenter
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -82,7 +160,7 @@ ApplicationWindow {
             Rectangle {
                 width: 1
                 height: parent.height
-                color: "#dde1ec"
+                color: "#D9DFE4"
             }
 
             ScrollView {
@@ -98,12 +176,13 @@ ApplicationWindow {
                     Column {
                         width: parent.width
                         spacing: 4
-                        
+
                         Label {
-                            text: "Points sélectionnés"
+                            text: "Planificateur"
                             font.pixelSize: 18
                             font.bold: true
                             color: "#1a2744"
+                            font.letterSpacing: -0.2
                         }
 
                         Label {
@@ -146,7 +225,7 @@ ApplicationWindow {
                                     Rectangle { width: 20; height: 20; radius: 10; color: "#e8f5e9" // el circulo
                                         Label { anchors.centerIn: parent; text: index + 1; font.pixelSize: 10; font.bold: true; color: "#2e7d32" }
                                     }
-                                    Label { Layout.fillWidth: true; text: model.lat.toFixed(5) + ", " + model.lng.toFixed(5); font.pixelSize: 11; color: "#4a5568"; font.family: "Monospace" }
+                                    Label { Layout.fillWidth: true; text: model.lat.toFixed(5) + ", " + model.lng.toFixed(5); font.pixelSize: 11; color: "#4a5568"; font.family: "Geist Mono" }
                                     Button {
                                         flat: true
                                         padding: 0
@@ -174,7 +253,7 @@ ApplicationWindow {
                                     Rectangle { width: 18; height: 18; radius: 9; color: "#fff3e0"
                                         Label { anchors.centerIn: parent; text: index + 1; font.pixelSize: 9; font.bold: true; color: "#ef6c00" }
                                     }
-                                    Label { Layout.fillWidth: true; text: model.lat.toFixed(5) + ", " + model.lng.toFixed(5); font.pixelSize: 11; color: "#4a5568"; font.family: "Monospace" }
+                                    Label { Layout.fillWidth: true; text: model.lat.toFixed(5) + ", " + model.lng.toFixed(5); font.pixelSize: 11; color: "#4a5568"; font.family: "Geist Mono" }
                                     Button {
                                         flat: true
                                         padding: 0
@@ -191,24 +270,38 @@ ApplicationWindow {
                     Button {
                         id: exportBtn
                         width: parent.width; height: 50
-                        text: "Calculer la meilleure route"
-                        enabled: mapView.vertices.length >= 3 && !mapView.drawingMode && !mapView.drawingRestrictions
-                        contentItem: Label {
-                            text: exportBtn.text
-                            font.bold: true
-                            font.pixelSize: 14
-                            color: "white"
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                            opacity: exportBtn.enabled ? 1.0 : 0.4
+                        text: mapView.isProcessing ? "Traitement..." : "Calculer la meilleure route"
+                        enabled: mapView.vertices.length >= 3 && !mapView.drawingMode && !mapView.drawingRestrictions && !mapView.isProcessing
+
+                        contentItem: Item {
+                            anchors.fill: parent
+                            RowLayout {
+                                anchors.centerIn: parent
+                                spacing: 10
+                                BusyIndicator {
+                                    visible: mapView.isProcessing
+                                    running: mapView.isProcessing
+                                    implicitWidth: 24; implicitHeight: 24
+                                }
+                                Label {
+                                    text: exportBtn.text
+                                    font.bold: true
+                                    font.pixelSize: 14
+                                    color: "white"
+                                }
+                            }
                         }
+
                         background: Rectangle {
-                            radius: 12; color: "#1a237e"
+                            radius: 12
+                            color: mapView.isProcessing ? "#455a64" : "#1a237e"
                             opacity: exportBtn.enabled ? (exportBtn.pressed ? 0.8 : 1.0) : 0.5
                             layer.enabled: exportBtn.enabled
                             layer.effect: MultiEffect { shadowEnabled: true; shadowColor: "#301a237e"; shadowBlur: 0.2; shadowVerticalOffset: 4 }
+
+                            Behavior on color { ColorAnimation { duration: 300 } }
                         }
-                        onClicked: console.log("Calculer cliqué")
+                        onClicked: mapView.startProcessing()
                     }
                 }
             }
