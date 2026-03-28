@@ -13,8 +13,20 @@ Item {
 
     // arreglo de arreglos con las zonas de restriccion
     property var restrictionZones: []
+    onRestrictionZonesChanged: {
+        rebuildRestrictionModel();
+        recalculateTotalRestrictionArea();
+        updatePolygonPaths();
+    }
+    
     // puntos de la zona actual
     property var currentRestrictionPoints: []
+    onCurrentRestrictionPointsChanged: {
+        rebuildRestrictionModel();
+        recalculateTotalRestrictionArea();
+        updatePolygonPaths();
+    }
+    property string currentRestrictionName: "Nouvelle Zone"
 
     // area acabada y luego se guarda
     signal areaFinished(var coordinates)
@@ -137,13 +149,14 @@ Item {
             var zones = restrictionZones;
             zones.push({
                 points: currentRestrictionPoints,
-                name: "Zone de Restriction #" + (zones.length + 1),
+                name: currentRestrictionName,
                 reason: "Zone d'exclusion",
                 color: "#e53935"
             });
             // Force property update by using a fresh array reference
             restrictionZones = zones.slice(); 
             currentRestrictionPoints = [];
+            currentRestrictionName = "Nouvelle Zone";
             recalculateTotalRestrictionArea();
             rebuildRestrictionModel();
             updatePolygonPaths();
@@ -410,7 +423,7 @@ Item {
         MapItemView {
             model: dashModel
             delegate: MapPolyline {
-                line.width: 3.5 // Thicker for better visibility
+                line.width: Math.max(1.5, 4.0 - (18 - map.zoomLevel) * 0.5)
                 line.color: model.dashColor
                 path: [
                     QtPositioning.coordinate(model.lat1, model.lng1),

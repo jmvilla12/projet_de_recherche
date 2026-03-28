@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Effects
+import QtQuick.Shapes
 
 ApplicationWindow {
     id: root
@@ -94,7 +95,7 @@ ApplicationWindow {
 
                 // Texto de estado
                 Label {
-                    text: mapView.drawingMode ? "Dessin de la mission..." : 
+                    text: mapView.drawingMode ? "Dessin de la mission..." :
                           (mapView.drawingRestrictions ? "Dessin de la zone de restriction..." : "Aucune zone sélectionnée")
                     color: "#5f6368"
                     anchors.verticalCenter: parent.verticalCenter
@@ -118,7 +119,7 @@ ApplicationWindow {
                         // Position below the hover area
                         x: root.width - width - 16
                         y: 55
-                        
+
                         Column {
                             anchors.centerIn: parent
                             Text { text: "Créé par:"; color: "white"; font.pixelSize: 10; font.bold: true; anchors.horizontalCenter: parent.horizontalCenter }
@@ -130,92 +131,8 @@ ApplicationWindow {
         }
     }
 
-    // --- DIALOGUE DE CONFIRMATION ---
-    Dialog {
-        id: deleteConfirmDialog
-        parent: Overlay.overlay
-        anchors.centerIn: parent
-        width: 300
-        modal: true
-        
-        property int targetType: 0 // 0: mission, 1: restriction
-        property int zoneIdx: -1
-        property int pIdx: -1
-        
-        background: Rectangle { 
-            radius: 12; color: "white" 
-            border.color: "#e2e8f0"; border.width: 1 
-        }
-        
-        ColumnLayout {
-            anchors.fill: parent; anchors.margins: 24; spacing: 18
-            
-            Rectangle {
-                Layout.preferredWidth: 48; Layout.preferredHeight: 48
-                Layout.alignment: Qt.AlignHCenter
-                color: "#fef2f2"; radius: 24
-                Label {
-                    anchors.centerIn: parent; text: "🗑"; font.pixelSize: 22; color: "#d32f2f"
-                }
-            }
-            
-            Label {
-                text: "Supprimer le point ?"
-                font.pixelSize: 17; font.bold: true; color: "#1a2744"
-                Layout.alignment: Qt.AlignHCenter
-            }
-            
-            Label {
-                text: "Cette action est irréversible."
-                font.pixelSize: 14; color: "#64748b"
-                Layout.alignment: Qt.AlignHCenter
-            }
-            
-            RowLayout {
-                Layout.fillWidth: true; spacing: 12; Layout.topMargin: 8
-                
-                Button {
-                    Layout.fillWidth: true; implicitHeight: 40; flat: true
-                    background: Rectangle { radius: 8; color: "transparent"; border.color: "#e2e8f0"; border.width: 1 }
-                    contentItem: Label { text: "Annuler"; color: "#475569"; font.bold: true; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
-                    onClicked: deleteConfirmDialog.close()
-                }
-                
-                Button {
-                    Layout.fillWidth: true; implicitHeight: 40
-                    background: Rectangle { radius: 8; color: "#d32f2f" }
-                    contentItem: Label { text: "Supprimer"; color: "white"; font.bold: true; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
-                    onClicked: {
-                        if (deleteConfirmDialog.targetType === 0) {
-                            mapView.removeMainPoint(deleteConfirmDialog.pIdx);
-                        } else {
-                            if (deleteConfirmDialog.zoneIdx === -1) { // Current drawing
-                                var current = mapView.currentRestrictionPoints;
-                                current.splice(deleteConfirmDialog.pIdx, 1);
-                                mapView.currentRestrictionPoints = current;
-                                mapView.rebuildRestrictionModel();
-                                mapView.recalculateTotalRestrictionArea();
-                                mapView.updatePolygonPaths();
-                            } else { // Finalized zone
-                                var zones = mapView.restrictionZones;
-                                zones[deleteConfirmDialog.zoneIdx].points.splice(deleteConfirmDialog.pIdx, 1);
-                                if (zones[deleteConfirmDialog.zoneIdx].points.length < 3) zones.splice(deleteConfirmDialog.zoneIdx, 1);
-                                mapView.restrictionZones = zones.slice();
-                                mapView.rebuildRestrictionModel();
-                                mapView.recalculateTotalRestrictionArea();
-                                mapView.updatePolygonPaths();
-                            }
-                        }
-                        deleteConfirmDialog.close()
-                    }
-                }
-            }
-        }
-    }
-
     RowLayout {
         anchors.fill: parent
-        spacing: 0
 
         // area de mapa central
         MapView {
@@ -349,14 +266,14 @@ ApplicationWindow {
                                     id: connectBtn
                                     implicitWidth: 110
                                     implicitHeight: 30
-                                    
+
                                     background: Rectangle {
                                         color: connectBtn.hovered ? "#e1e9f0" : "#f0f5f9"
                                         border.color: "#d1dce5"
                                         border.width: 1
                                         radius: 8
                                     }
-                                    
+
                                     contentItem: Item {
                                         Row {
                                             anchors.centerIn: parent
@@ -402,7 +319,7 @@ ApplicationWindow {
                                     horizontalAlignment: Text.AlignHCenter
                                 }
                             }
-                            
+
                             Item { Layout.fillHeight: true }
                         }
                     }
@@ -411,7 +328,7 @@ ApplicationWindow {
 
                     // --- SECCIÓN MODO DE DIBUJO ---
                     Label {
-                        text: "Mode dessin"
+                        text: "MODO DE DIBUJO"
                         font.pixelSize: 12
                         font.bold: true
                         font.capitalization: Font.AllUppercase
@@ -424,18 +341,19 @@ ApplicationWindow {
                         Button {
                             id: misionBtn
                             Layout.fillWidth: true
+                            Layout.preferredWidth: 100
                             implicitHeight: 44
-                            
+
                             // Propiedad para saber si está seleccionado
                             property bool active: mapView.drawingMode
-                            
+
                             background: Rectangle {
                                 color: misionBtn.active ? "#00a651" : (misionBtn.pressed ? "#f0f4f8" : (misionBtn.hovered ? "#f8fafd" : "white"))
                                 border.color: misionBtn.active ? "#00a651" : "#e2e8f0"
                                 border.width: 1
                                 radius: 10
                             }
-                            
+
                             contentItem: RowLayout {
                                 anchors.centerIn: parent
                                 spacing: 8
@@ -466,11 +384,12 @@ ApplicationWindow {
                         Button {
                             id: restriccionBtn
                             Layout.fillWidth: true
+                            Layout.preferredWidth: 100
                             implicitHeight: 44
-                            
+
                             property bool active: mapView.drawingRestrictions
                             enabled: mapView.vertices.length >= 3 || mapView.restrictionZones.length > 0
-                            
+
                             background: Rectangle {
                                 color: restriccionBtn.active ? "#e53935" : (restriccionBtn.pressed ? "#f0f4f8" : (restriccionBtn.hovered ? "#f8fafd" : "white"))
                                 border.color: restriccionBtn.active ? "#e53935" : "#e2e8f0"
@@ -478,7 +397,7 @@ ApplicationWindow {
                                 radius: 10
                                 opacity: restriccionBtn.enabled ? 1.0 : 0.4
                             }
-                            
+
                             contentItem: RowLayout {
                                 anchors.centerIn: parent
                                 spacing: 8
@@ -509,20 +428,103 @@ ApplicationWindow {
                         }
                     }
 
-                    // --- MISION DE VUELO CARD ---
+                    // --- MISION DE VUELO SECTION ---
                     Column {
                         width: parent.width
                         spacing: 12
-                        visible: mapView.vertices.length > 0
 
-                        Label {
-                            text: "MISION DE VUELO"
-                            font.pixelSize: 12
-                            font.bold: true
-                            font.capitalization: Font.AllUppercase
-                            color: "#5f6368"
+                        RowLayout {
+                            width: parent.width
+                            Label {
+                                text: "MISION DE VUELO"
+                                font.pixelSize: 12; font.bold: true; font.capitalization: Font.AllUppercase; color: "#5f6368"
+                                Layout.fillWidth: true
+                            }
                         }
 
+                        // Placeholder when NO vertices
+                        Rectangle {
+                            width: parent.width; height: 160; radius: 12; color: "transparent"
+                            visible: mapView.vertices.length === 0
+                            clip: true
+
+                            Shape {
+                                id: dashContainer
+                                anchors.fill: parent
+                                property real margin: 0.6
+                                ShapePath {
+                                        strokeColor: "#94a3b8"
+                                        strokeWidth: 1.2
+                                        fillColor: "transparent"
+                                        strokeStyle: ShapePath.DashLine
+                                        dashPattern: [4, 4]
+
+                                        // Usamos dashContainer.margin para asegurar que lo encuentre
+                                        startX: 12 + dashContainer.margin
+                                        startY: dashContainer.margin
+
+                                        PathLine {
+                                            x: dashContainer.width - 12 - dashContainer.margin
+                                            y: dashContainer.margin
+                                        }
+                                        PathArc {
+                                            x: dashContainer.width - dashContainer.margin
+                                            y: 12 + dashContainer.margin
+                                            radiusX: 12; radiusY: 12
+                                        }
+
+                                        PathLine {
+                                            x: dashContainer.width - dashContainer.margin
+                                            y: dashContainer.height - 12 - dashContainer.margin
+                                        }
+                                        PathArc {
+                                            x: dashContainer.width - 12 - dashContainer.margin
+                                            y: dashContainer.height - dashContainer.margin
+                                            radiusX: 12; radiusY: 12
+                                        }
+
+                                        PathLine {
+                                            x: 12 + dashContainer.margin
+                                            y: dashContainer.height - dashContainer.margin
+                                        }
+                                        PathArc {
+                                            x: dashContainer.margin
+                                            y: dashContainer.height - 12 - dashContainer.margin
+                                            radiusX: 12; radiusY: 12
+                                        }
+
+                                        PathLine {
+                                            x: dashContainer.margin
+                                            y: 12 + dashContainer.margin
+                                        }
+                                        PathArc {
+                                            x: 12 + dashContainer.margin
+                                            y: dashContainer.margin
+                                            radiusX: 12; radiusY: 12
+                                        }
+                                    }
+                            }
+
+                            Column {
+                                anchors.centerIn: parent; spacing: 10
+                                Image {
+                                    source: "/qt/qml/projet_de_recherche/assets/icons/sin_mision.png"
+                                    sourceSize: Qt.size(48, 48)
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    opacity: 0.5
+                                }
+                                Label {
+                                    text: "Sin mision"; font.pixelSize: 16; font.bold: true; color: "#4a5568"
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                }
+                                Label {
+                                    text: "Crea una para empezar"; font.pixelSize: 13; color: "#94a3b8"
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                }
+                            }
+                        }
+
+                        // Actual Mission Card
                         Rectangle {
                             width: parent.width
                             implicitHeight: cardContent.height + 32
@@ -530,6 +532,7 @@ ApplicationWindow {
                             color: "white"
                             border.color: "#00a651"
                             border.width: 1
+                            visible: mapView.vertices.length > 0
 
                             Column {
                                 id: cardContent
@@ -568,7 +571,7 @@ ApplicationWindow {
 
                                 Label {
                                     text: "Vertices del area (" + mapView.vertices.length + ")"
-                                    font.pixelSize: 13; font.bold: true; color: "#4a5568"
+                                    font.pixelSize: 13; font.bold: true; color: "#5f6368"
                                 }
 
                                 Repeater {
@@ -585,11 +588,7 @@ ApplicationWindow {
                                             Button {
                                                 implicitWidth: 24; implicitHeight: 24; flat: true
                                                 contentItem: Label { text: "🗑"; color: "#a0aec0"; font.pixelSize: 14; horizontalAlignment: Text.AlignHCenter }
-                                                onClicked: {
-                                                    deleteConfirmDialog.targetType = 0
-                                                    deleteConfirmDialog.pIdx = index
-                                                    deleteConfirmDialog.open()
-                                                }
+                                                onClicked: mapView.removeMainPoint(index)
                                             }
                                         }
                                     }
@@ -598,7 +597,7 @@ ApplicationWindow {
                                 Column {
                                     width: parent.width
                                     spacing: 8
-                                    
+
                                     Button {
                                         id: generarRutaBtn
                                         width: parent.width
@@ -654,7 +653,7 @@ ApplicationWindow {
                     Column {
                         width: parent.width
                         spacing: 12
-                        visible: mapView.vertices.length >= 3
+                        visible: mapView.vertices.length >= 3 || mapView.restrictionZones.length > 0 || mapView.drawingRestrictions
 
                         RowLayout {
                             width: parent.width
@@ -669,15 +668,15 @@ ApplicationWindow {
                             Button {
                                 id: addRestrBtn
                                 implicitWidth: 90; implicitHeight: 32; flat: true
-                                background: Rectangle { 
-                                    radius: 6; 
+                                background: Rectangle {
+                                    radius: 6;
                                     color: addRestrBtn.pressed ? "#e2e8f0" : (addRestrBtn.hovered ? "#edf2f7" : "#f8fafd")
-                                    border.color: "#e2e8f0"; border.width: 1 
+                                    border.color: "#e2e8f0"; border.width: 1
                                 }
                                 contentItem: RowLayout {
                                     anchors.centerIn: parent; spacing: 4
                                     Label { text: "+"; color: "#1a2744"; font.pixelSize: 16 }
-                                    Label { text: "Ajouter"; color: "#1a2744"; font.pixelSize: 13; font.bold: true }
+                                    Label { text: "Agregar"; color: "#1a2744"; font.pixelSize: 13; font.bold: true }
                                 }
                                 onClicked: {
                                     mapView.finalizeCurrentRestriction()
@@ -686,9 +685,88 @@ ApplicationWindow {
                                 }
                             }
                         }
+                        // Placeholder when NO restriction zones and not drawing
+                        Rectangle {
+                            width: parent.width; height: 120; radius: 12; color: "transparent"
+                            visible: mapView.restrictionZones.length === 0 && !mapView.drawingRestrictions
+                            clip: true
+
+                            Shape {
+                                id: dashContainer2
+                                anchors.fill: parent
+                                property real margin: 0.8
+                                ShapePath {
+                                        strokeColor: "#94a3b8"
+                                        strokeWidth: 1.2
+                                        fillColor: "transparent"
+                                        strokeStyle: ShapePath.DashLine
+                                        dashPattern: [4, 4]
+
+                                        // Usamos dashContainer.margin para asegurar que lo encuentre
+                                        startX: 12 + dashContainer2.margin
+                                        startY: dashContainer2.margin
+
+                                        PathLine {
+                                            x: dashContainer2.width - 12 - dashContainer2.margin
+                                            y: dashContainer2.margin
+                                        }
+                                        PathArc {
+                                            x: dashContainer2.width - dashContainer2.margin
+                                            y: 12 + dashContainer2.margin
+                                            radiusX: 12; radiusY: 12
+                                        }
+
+                                        PathLine {
+                                            x: dashContainer2.width - dashContainer2.margin
+                                            y: dashContainer2.height - 12 - dashContainer2.margin
+                                        }
+                                        PathArc {
+                                            x: dashContainer2.width - 12 - dashContainer2.margin
+                                            y: dashContainer2.height - dashContainer2.margin
+                                            radiusX: 12; radiusY: 12
+                                        }
+
+                                        PathLine {
+                                            x: 12 + dashContainer2.margin
+                                            y: dashContainer2.height - dashContainer2.margin
+                                        }
+                                        PathArc {
+                                            x: dashContainer2.margin
+                                            y: dashContainer2.height - 12 - dashContainer2.margin
+                                            radiusX: 12; radiusY: 12
+                                        }
+
+                                        PathLine {
+                                            x: dashContainer2.margin
+                                            y: 12 + dashContainer2.margin
+                                        }
+                                        PathArc {
+                                            x: 12 + dashContainer2.margin
+                                            y: dashContainer2.margin
+                                            radiusX: 12; radiusY: 12
+                                        }
+                                    }
+                            }
+
+                            Column {
+                                anchors.centerIn: parent; spacing: 10
+                                Image {
+                                    source: "/qt/qml/projet_de_recherche/assets/icons/sin_restriccion.png"
+                                    sourceSize: Qt.size(40, 40)
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    opacity: 0.5
+                                }
+                                Label {
+                                    text: "Sin zonas de restriccion"; font.pixelSize: 15; font.bold: true; color: "#4a5568"
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                }
+                            }
+                        }
+
                         Column {
                                 width: parent.width
                                 spacing: 12
+                                visible: mapView.restrictionZones.length > 0 || mapView.drawingRestrictions
                              Repeater {
                                  id: zonesRepeater
                                  model: mapView.restrictionZones.length + (mapView.drawingRestrictions ? 1 : 0)
@@ -699,17 +777,18 @@ ApplicationWindow {
                                      radius: 12
                                      color: "white"
                                      border.color: zoneColor
-                                     border.width: expanded ? 1 : 0 
-                                     
+                                     border.width: expanded ? 1 : 0
+
                                      layer.enabled: !expanded
                                      layer.effect: MultiEffect { shadowEnabled: true; shadowColor: "#10000000"; shadowBlur: 0.1; shadowVerticalOffset: 1 }
 
+                                     property int zoneIndex: index
                                      property bool isCurrent: index === mapView.restrictionZones.length
                                      property var zoneData: isCurrent ? null : mapView.restrictionZones[index]
                                      property var pts: isCurrent ? mapView.currentRestrictionPoints : zoneData.points
                                      property bool expanded: true // Always show them for now
                                      property color zoneColor: "#e53935"
-                                     
+
                                      // Stable property for point numbering
                                      property int pointOffset: isCurrent ? mapView.getTotalPointsBeforeZone(mapView.restrictionZones.length) : mapView.getTotalPointsBeforeZone(index)
 
@@ -726,7 +805,10 @@ ApplicationWindow {
                                             RowLayout {
                                                 anchors.fill: parent; spacing: 10
                                                 Rectangle { width: 12; height: 12; radius: 6; color: zoneColor }
-                                                Label { text: isCurrent ? "Nueva Zona" : ("Zone de Restriction #" + (index + 1)); font.pixelSize: 15; font.bold: true; color: "#070B0F" }
+                                                Label {
+                                                    text: isCurrent ? (mapView.currentRestrictionName === "Nouvelle Zone" ? "Nouvelle Zone" : mapView.currentRestrictionName) : zoneData.name
+                                                    font.pixelSize: 15; font.bold: true; color: "#070B0F"
+                                                }
                                                 Item { Layout.fillWidth: true }
                                                 Rectangle {
                                                     width: 48; height: 24; radius: 6; color: zoneColor
@@ -741,38 +823,23 @@ ApplicationWindow {
                                             spacing: 16
                                             visible: zoneCard.expanded
 
-                                            Label { text: isCurrent ? "Zone d'exclusion" : zoneData.reason; font.pixelSize: 13; color: "#5f6368" }
-
                                             Rectangle { width: parent.width; height: 1; color: "#edf2f7" }
 
                                             Column {
                                                 width: parent.width; spacing: 6
                                                 Label { text: "Nom"; font.pixelSize: 12; color: "#5f6368" }
-                                                TextField { 
-                                                    width: parent.width; text: isCurrent ? "Zona de dibujo" : zoneData.name
-                                                    enabled: !isCurrent
+                                                TextField {
+                                                    width: parent.width; text: isCurrent ? mapView.currentRestrictionName : zoneData.name
                                                     background: Rectangle { radius: 6; border.color: "#e2e8f0"; border.width: 1; color: "white" }
                                                     font.pixelSize: 13
                                                     onTextEdited: {
-                                                        var zones = mapView.restrictionZones;
-                                                        zones[index].name = text;
-                                                        mapView.restrictionZones = zones;
-                                                    }
-                                                }
-                                            }
-
-                                            Column {
-                                                width: parent.width; spacing: 6
-                                                Label { text: "Raison"; font.pixelSize: 12; color: "#5f6368" }
-                                                TextField { 
-                                                    width: parent.width; text: isCurrent ? "Zona de exclusion" : zoneData.reason
-                                                    enabled: !isCurrent
-                                                    background: Rectangle { radius: 6; border.color: "#e2e8f0"; border.width: 1; color: "white" }
-                                                    font.pixelSize: 13
-                                                    onTextEdited: {
-                                                        var zones = mapView.restrictionZones;
-                                                        zones[index].reason = text;
-                                                        mapView.restrictionZones = zones;
+                                                        if (isCurrent) {
+                                                            mapView.currentRestrictionName = text;
+                                                        } else {
+                                                            var zones = mapView.restrictionZones;
+                                                            zones[index].name = text;
+                                                            mapView.restrictionZones = zones.slice();
+                                                        }
                                                     }
                                                 }
                                             }
@@ -787,19 +854,30 @@ ApplicationWindow {
                                                         width: parent.width; height: 40; color: "#fef8f8"; radius: 6
                                                         RowLayout {
                                                             anchors.fill: parent; anchors.margins: 8; spacing: 8
-                                                            Label { 
+                                                            Label {
                                                                 text: (zoneCard.pointOffset + index + 1)
-                                                                font.pixelSize: 11; font.bold: true; color: "#e53935"; width: 22; horizontalAlignment: Text.AlignHCenter 
+                                                                font.pixelSize: 11; font.bold: true; color: "#e53935"; width: 22; horizontalAlignment: Text.AlignHCenter
                                                             }
                                                             Label { Layout.fillWidth: true; text: modelData.latitude.toFixed(5) + ", " + modelData.longitude.toFixed(5); font.pixelSize: 11; color: "#4a5568"; font.family: "Geist Mono" }
                                                             Button {
                                                                 implicitWidth: 24; implicitHeight: 24; flat: true
                                                                 contentItem: Label { text: "🗑"; color: "#5f6368"; font.pixelSize: 14; horizontalAlignment: Text.AlignHCenter }
                                                                 onClicked: {
-                                                                    deleteConfirmDialog.targetType = 1
-                                                                    deleteConfirmDialog.zoneIdx = zoneCard.isCurrent ? -1 : index 
-                                                                    deleteConfirmDialog.pIdx = index
-                                                                    deleteConfirmDialog.open()
+                                                                    var zIdx = zoneCard.zoneIndex;
+                                                                    if (zoneCard.isCurrent) {
+                                                                        var current = mapView.currentRestrictionPoints;
+                                                                        current.splice(index, 1);
+                                                                        mapView.currentRestrictionPoints = current.slice();
+                                                                    } else {
+                                                                        var zones = mapView.restrictionZones;
+                                                                        if (zIdx < zones.length) {
+                                                                            zones[zIdx].points.splice(index, 1);
+                                                                            if (zones[zIdx].points.length < 3) {
+                                                                                zones.splice(zIdx, 1);
+                                                                            }
+                                                                            mapView.restrictionZones = zones.slice();
+                                                                        }
+                                                                    }
                                                                 }
                                                             }
                                                         }
@@ -816,12 +894,18 @@ ApplicationWindow {
                                                     Label { text: "Supprimer la zone"; color: "white"; font.bold: true; font.pixelSize: 14 }
                                                 }
                                                 onClicked: {
+                                                    var zIdx = zoneCard.zoneIndex;
                                                     if (zoneCard.isCurrent) {
                                                         mapView.currentRestrictionPoints = [];
+                                                        mapView.drawingRestrictions = false;
+                                                        mapView.drawingMode = true;
                                                     } else {
-                                                        var allZ = mapView.restrictionZones; allZ.splice(index, 1); mapView.restrictionZones = allZ;
+                                                        var allZ = mapView.restrictionZones;
+                                                        if (zIdx < allZ.length) {
+                                                            allZ.splice(zIdx, 1);
+                                                            mapView.restrictionZones = allZ.slice();
+                                                        }
                                                     }
-                                                    mapView.rebuildRestrictionModel(); mapView.recalculateTotalRestrictionArea(); mapView.updatePolygonPaths()
                                                 }
                                             }
                                         }
@@ -858,15 +942,15 @@ ApplicationWindow {
                                 Column {
                                     anchors.centerIn: parent
                                     spacing: 6
-                                    Row { 
+                                    Row {
                                         spacing: 6; anchors.horizontalCenter: parent.horizontalCenter
                                         Label { text: "⚑"; color: "#5f6368"; font.pixelSize: 13 }
-                                        Label { text: "Area"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase } 
+                                        Label { text: "Area"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase }
                                     }
-                                    Label { 
+                                    Label {
                                         text: {
                                             var a = mapView.netArea;
-                                            return a > 10000 ? (a/1000000).toFixed(2) + " km²" : (a > 0 ? a.toFixed(2) + " m²" : "0 m²")
+                                            return a >= 1000000 ? (a/1000000).toFixed(2) + " km²" : (a > 0 ? a.toFixed(2) + " m²" : "0 m²")
                                         }
                                         anchors.horizontalCenter: parent.horizontalCenter
                                         font.pixelSize: 16; font.bold: true; color: "#1a2744"
@@ -882,18 +966,18 @@ ApplicationWindow {
                                 Column {
                                     anchors.centerIn: parent
                                     spacing: 6
-                                    Row { 
+                                    Row {
                                         spacing: 6; anchors.horizontalCenter: parent.horizontalCenter
                                         Label { text: "📏"; color: "#5f6368"; font.pixelSize: 13 }
-                                        Label { text: "Perimetro"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase } 
+                                        Label { text: "Perimetro"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase }
                                     }
-                                    Label { 
+                                    Label {
                                         text: {
                                             var p = mapView.calculatedPerimeter;
                                             return p > 1000 ? (p/1000).toFixed(2) + " km" : p.toFixed(2) + " m"
                                         }
                                         anchors.horizontalCenter: parent.horizontalCenter
-                                        font.pixelSize: 16; font.bold: true; color: "#1a2744" 
+                                        font.pixelSize: 16; font.bold: true; color: "#1a2744"
                                         font.family: "Geist Sans"
                                     }
                                 }
@@ -906,15 +990,15 @@ ApplicationWindow {
                                 Column {
                                     anchors.centerIn: parent
                                     spacing: 6
-                                    Row { 
+                                    Row {
                                         spacing: 6; anchors.horizontalCenter: parent.horizontalCenter
                                         Label { text: "☍"; color: "#5f6368"; font.pixelSize: 13 }
-                                        Label { text: "Distancia"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase } 
+                                        Label { text: "Distancia"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase }
                                     }
-                                    Label { 
+                                    Label {
                                         text: "0 m"
                                         anchors.horizontalCenter: parent.horizontalCenter
-                                        font.pixelSize: 16; font.bold: true; color: "#1a2744" 
+                                        font.pixelSize: 16; font.bold: true; color: "#1a2744"
                                         font.family: "Geist Sans"
                                     }
                                 }
@@ -927,30 +1011,19 @@ ApplicationWindow {
                                 Column {
                                     anchors.centerIn: parent
                                     spacing: 6
-                                    Row { 
+                                    Row {
                                         spacing: 6; anchors.horizontalCenter: parent.horizontalCenter
                                         Label { text: "⏱"; color: "#5f6368"; font.pixelSize: 13 }
-                                        Label { text: "Tiempo Est."; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase } 
+                                        Label { text: "Tiempo Est."; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase }
                                     }
-                                    Label { 
+                                    Label {
                                         text: "0 min"
                                         anchors.horizontalCenter: parent.horizontalCenter
-                                        font.pixelSize: 16; font.bold: true; color: "#1a2744" 
+                                        font.pixelSize: 16; font.bold: true; color: "#1a2744"
                                         font.family: "Geist Sans"
                                     }
                                 }
                             }
-                        }
-                    }
-
-                    Item {
-                        width: parent.width
-                        height: 20
-                        visible: !(mapView.vertices.length > 0 || mapView.restrictionZones.length > 0 || mapView.currentRestrictionPoints.length > 0)
-                        Label {
-                            anchors.centerIn: parent
-                            text: "Aucun point sélectionné"
-                            font.pixelSize: 13; color: "#a0aec0"
                         }
                     }
                 }

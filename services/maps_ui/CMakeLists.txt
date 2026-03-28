@@ -16,10 +16,15 @@ qt_add_qml_module(app_maps_ui
         assets/images/app_icon.png
         assets/images/LogoIMT.png
         assets/images/LogoIMTInverso.png
+        assets/images/Logo_Elegante.png
+        assets/images/LogoFondoBlanco.png
+        assets/images/LogoSinFondo.png
         assets/icons/wifi_off.svg
         assets/icons/Location_Searching.svg
         assets/icons/circulo_dibujar.svg
         assets/icons/restric_icon.svg
+        assets/icons/sin_mision.png
+        assets/icons/sin_restriccion.png
     RESOURCES
         assets/fonts/Geist-Regular.ttf
         assets/fonts/Geist-Medium.ttf
