@@ -94,7 +94,8 @@ ApplicationWindow {
 
                 // Texto de estado
                 Label {
-                    text: "Aucune zone sélectionnée"
+                    text: mapView.drawingMode ? "Dessin de la mission..." : 
+                          (mapView.drawingRestrictions ? "Dessin de la zone de restriction..." : "Aucune zone sélectionnée")
                     color: "#5f6368"
                     anchors.verticalCenter: parent.verticalCenter
                     font { family: "Geist Sans"; pixelSize: 14; letterSpacing: -0.5}
@@ -112,26 +113,16 @@ ApplicationWindow {
                     // Cuadrito (Tooltip) que aparece al pasar el ratón
                     Rectangle {
                         visible: infoHover.hovered
-                        parent: Overlay.overlay // Para que aparezca sobre todo
-                        x: infoHover.point.position.x - width/2
-                        y: 65 // Debajo del toolbar
-                        width: 180
-                        height: 50
-                        color: "#333333"
-                        radius: 4
-
+                        parent: Overlay.overlay
+                        width: 180; height: 50; radius: 4; color: "#333333"
+                        // Position below the hover area
+                        x: root.width - width - 16
+                        y: 55
+                        
                         Column {
                             anchors.centerIn: parent
-                            Text {
-                                text: "Créé par:"
-                                color: "white"; font.pixelSize: 10; font.bold: true
-                                anchors.horizontalCenter: parent.horizontalCenter
-                            }
-                            Text {
-                                text: "Nombre de los Creadores"
-                                color: "white"; font.pixelSize: 12
-                                anchors.horizontalCenter: parent.horizontalCenter
-                            }
+                            Text { text: "Créé par:"; color: "white"; font.pixelSize: 10; font.bold: true; anchors.horizontalCenter: parent.horizontalCenter }
+                            Text { text: "Nombre de los Creadores"; color: "white"; font.pixelSize: 12; anchors.horizontalCenter: parent.horizontalCenter }
                         }
                     }
                 }
@@ -173,6 +164,7 @@ ApplicationWindow {
                     width: parent.width
                     spacing: 20
 
+
                     RowLayout {
                         width: parent.width
                         spacing: 12
@@ -181,25 +173,18 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             spacing: 4
 
+
+
                             Label {
                                 text: "Planificateur"
                                 font.pixelSize: 18
                                 font.bold: true
                                 color: "#1a2744"
                                 font.letterSpacing: -0.2
+
+
                             }
 
-                            Label {
-                                visible: mapView.vertices.length >= 3
-                                text: {
-                                    var area = mapView.netArea;
-                                    if (area > 1000000) return "Surface : " + (area / 1000000).toLocaleString(Qt.locale(), 'f', 2) + " km²";
-                                    return "Surface : " + area.toLocaleString(Qt.locale(), 'f', 2) + " m²";
-                                }
-                                font.pixelSize: 14
-                                font.bold: true
-                                color: "#2e7d32"
-                            }
                         }
 
                         Button {
@@ -237,7 +222,7 @@ ApplicationWindow {
                     Rectangle {
                         id: droneStatusCard
                         width: parent.width
-                        height: 180
+                        height: 150
                         color: "white"
                         radius: 12
                         border.color: "#edf2f7"
@@ -322,7 +307,7 @@ ApplicationWindow {
                                 Image {
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     source: "/qt/qml/projet_de_recherche/assets/icons/wifi_off.svg"
-                                    sourceSize: Qt.size(48, 48)
+                                    sourceSize: Qt.size(32, 32)
                                     opacity: 0.1
                                 }
 
@@ -341,112 +326,545 @@ ApplicationWindow {
 
                     Rectangle { width: parent.width; height: 1; color: "#dde1ec" }
 
+                    // --- SECCIÓN MODO DE DIBUJO ---
                     Label {
-                        text: "Aucun point sélectionné"
-                        font.pixelSize: 13
-                        color: "#a0aec0"
-                        horizontalAlignment: Text.AlignHCenter
+                        text: "Mode dessin"
+                        font.pixelSize: 12
+                        font.bold: true
+                        font.capitalization: Font.AllUppercase
+                        color: "#5f6368"
+                        leftPadding: 4
+                    }
+
+                    RowLayout {
                         width: parent.width
-                        visible: mapView.vertices.length === 0 && mapView.restrictionModel.count === 0
-                    }
-
-                    // Section Cobertura
-                    Column {
-                        width: parent.width; spacing: 8
-                        visible: mapView.vertices.length > 0
-                        Label { text: "Points de couverture"; font.pixelSize: 13; font.bold: true; color: "#2e7d32" }
-                        Repeater {
-                            model: mapView.vertexModel
-                            delegate: Rectangle {
-                                width: parent.width; height: 44; color: "white"; radius: 8; border.color: "#edf2f7" //
-                                layer.enabled: true
-                                layer.effect: MultiEffect { shadowEnabled: true; shadowColor: "#08000000"; shadowBlur: 0.1; shadowVerticalOffset: 2 } //caja donde esta cada punto
-                                RowLayout {
-                                    anchors.fill: parent; anchors.margins: 10; spacing: 10
-                                    Rectangle { width: 20; height: 20; radius: 10; color: "#e8f5e9" // el circulo
-                                        Label { anchors.centerIn: parent; text: index + 1; font.pixelSize: 10; font.bold: true; color: "#2e7d32" }
-                                    }
-                                    Label { Layout.fillWidth: true; text: model.lat.toFixed(5) + ", " + model.lng.toFixed(5); font.pixelSize: 11; color: "#4a5568"; font.family: "Geist Mono" }
-                                    Button {
-                                        flat: true
-                                        padding: 0
-                                        contentItem: Label { text: "✕"; color: "#e53935" }
-                                        onClicked: mapView.removeMainPoint(index)
-                                    }
-                                }
+                        Button {
+                            id: misionBtn
+                            Layout.fillWidth: true
+                            implicitHeight: 44
+                            
+                            // Propiedad para saber si está seleccionado
+                            property bool active: mapView.drawingMode
+                            
+                            background: Rectangle {
+                                color: misionBtn.active ? "#00a651" : (misionBtn.pressed ? "#f0f4f8" : (misionBtn.hovered ? "#f8fafd" : "white"))
+                                border.color: misionBtn.active ? "#00a651" : "#e2e8f0"
+                                border.width: 1
+                                radius: 10
                             }
-                        }
-                    }
-
-                    // Section Restricciones
-                    Column {
-                        width: parent.width; spacing: 8
-                        visible: mapView.restrictionModel.count > 0
-                        Label { text: "Points restreints"; font.pixelSize: 13; font.bold: true; color: "#ef6c00" }
-                        Repeater {
-                            model: mapView.restrictionModel
-                            delegate: Rectangle {
-                                width: parent.width; height: 44; color: "white"; radius: 8; border.color: "#fff3e0"
-                                layer.enabled: true
-                                layer.effect: MultiEffect { shadowEnabled: true; shadowColor: "#08000000"; shadowBlur: 0.1; shadowVerticalOffset: 2 }
-                                RowLayout {
-                                    anchors.fill: parent; anchors.margins: 10; spacing: 10
-                                    Rectangle { width: 18; height: 18; radius: 9; color: "#fff3e0"
-                                        Label { anchors.centerIn: parent; text: index + 1; font.pixelSize: 9; font.bold: true; color: "#ef6c00" }
-                                    }
-                                    Label { Layout.fillWidth: true; text: model.lat.toFixed(5) + ", " + model.lng.toFixed(5); font.pixelSize: 11; color: "#4a5568"; font.family: "Geist Mono" }
-                                    Button {
-                                        flat: true
-                                        padding: 0
-                                        contentItem: Label { text: "✕"; color: "#e53935" }
-                                        onClicked: mapView.removeRestrictionPoint(index)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Item { width: parent.width; height: 20 } // Spacer
-
-                    Button {
-                        id: exportBtn
-                        width: parent.width; height: 50
-                        text: mapView.isProcessing ? "Traitement..." : "Calculer la meilleure route"
-                        enabled: mapView.vertices.length >= 3 && !mapView.drawingMode && !mapView.drawingRestrictions && !mapView.isProcessing
-
-                        contentItem: Item {
-                            anchors.fill: parent
-                            RowLayout {
+                            
+                            contentItem: RowLayout {
                                 anchors.centerIn: parent
-                                spacing: 10
-                                BusyIndicator {
-                                    visible: mapView.isProcessing
-                                    running: mapView.isProcessing
-                                    implicitWidth: 24; implicitHeight: 24
+                                spacing: 8
+                                Image {
+                                    source: "/qt/qml/projet_de_recherche/assets/icons/circulo_dibujar.svg"
+                                    sourceSize: Qt.size(18, 18)
+                                    Layout.alignment: Qt.AlignVCenter
+                                    layer.enabled: misionBtn.active
+                                    layer.effect: MultiEffect {
+                                        colorization: 1.0
+                                        colorizationColor: "white"
+                                    }
                                 }
                                 Label {
-                                    text: exportBtn.text
-                                    font.bold: true
-                                    font.pixelSize: 14
-                                    color: "white"
+                                    text: "Mision"
+                                    font.pixelSize: 15
+                                    font.weight: Font.Medium
+                                    color: misionBtn.active ? "white" : "#4a5568"
+                                    verticalAlignment: Text.AlignVCenter
                                 }
+                            }
+                            onClicked: {
+                                mapView.drawingMode = true
+                                mapView.drawingRestrictions = false
                             }
                         }
 
-                        background: Rectangle {
-                            radius: 12
-                            color: mapView.isProcessing ? "#455a64" : "#1a237e"
-                            opacity: exportBtn.enabled ? (exportBtn.pressed ? 0.8 : 1.0) : 0.5
-                            layer.enabled: exportBtn.enabled
-                            layer.effect: MultiEffect { shadowEnabled: true; shadowColor: "#301a237e"; shadowBlur: 0.2; shadowVerticalOffset: 4 }
-
-                            Behavior on color { ColorAnimation { duration: 300 } }
+                        Button {
+                            id: restriccionBtn
+                            Layout.fillWidth: true
+                            implicitHeight: 44
+                            
+                            property bool active: mapView.drawingRestrictions
+                            enabled: mapView.vertices.length >= 3 || mapView.restrictionZones.length > 0
+                            
+                            background: Rectangle {
+                                color: restriccionBtn.active ? "#e53935" : (restriccionBtn.pressed ? "#f0f4f8" : (restriccionBtn.hovered ? "#f8fafd" : "white"))
+                                border.color: restriccionBtn.active ? "#e53935" : "#e2e8f0"
+                                border.width: 1
+                                radius: 10
+                                opacity: restriccionBtn.enabled ? 1.0 : 0.4
+                            }
+                            
+                            contentItem: RowLayout {
+                                anchors.centerIn: parent
+                                spacing: 8
+                                Image {
+                                    source: "/qt/qml/projet_de_recherche/assets/icons/restric_icon.svg"
+                                    sourceSize: Qt.size(18, 18)
+                                    Layout.alignment: Qt.AlignVCenter
+                                    opacity: restriccionBtn.enabled ? 1.0 : 0.4
+                                    layer.enabled: restriccionBtn.active
+                                    layer.effect: MultiEffect {
+                                        colorization: 1.0
+                                        colorizationColor: "white"
+                                    }
+                                }
+                                Label {
+                                    text: "Restriccion"
+                                    font.pixelSize: 15
+                                    font.weight: Font.Medium
+                                    color: restriccionBtn.active ? "white" : "#4a5568"
+                                    verticalAlignment: Text.AlignVCenter
+                                    opacity: restriccionBtn.enabled ? 1.0 : 0.4
+                                }
+                            }
+                            onClicked: {
+                                mapView.drawingMode = false
+                                mapView.drawingRestrictions = true
+                            }
                         }
-                        onClicked: mapView.startProcessing()
+                    }
+
+                    // --- MISION DE VUELO CARD ---
+                    Column {
+                        width: parent.width
+                        spacing: 12
+                        visible: mapView.vertices.length > 0
+
+                        Label {
+                            text: "MISION DE VUELO"
+                            font.pixelSize: 12
+                            font.bold: true
+                            font.capitalization: Font.AllUppercase
+                            color: "#5f6368"
+                        }
+
+                        Rectangle {
+                            width: parent.width
+                            implicitHeight: cardContent.height + 32
+                            radius: 12
+                            color: "white"
+                            border.color: "#00a651"
+                            border.width: 1
+
+                            Column {
+                                id: cardContent
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.top: parent.top
+                                anchors.margins: 16
+                                spacing: 16
+
+                                RowLayout {
+                                    width: parent.width
+                                    spacing: 10
+                                    Rectangle {
+                                        width: 12; height: 12; radius: 6; color: "#00a651"
+                                    }
+                                    Label {
+                                        text: "Mision Principal"
+                                        font.pixelSize: 15; font.bold: true; color: "#070B0F"
+                                    }
+                                    Item { Layout.fillWidth: true }
+                                    Rectangle {
+                                        width: 80; height: 24; radius: 6; color: "#e8f0fe"
+                                        Label {
+                                            anchors.centerIn: parent
+                                            text: "Planificando"; font.pixelSize: 11; color: "#4a5568"
+                                        }
+                                    }
+                                }
+
+                                Label {
+                                    text: mapView.vertices.length + " vertices  -  0 waypoints"
+                                    font.pixelSize: 13; color: "#5f6368"
+                                }
+
+                                Rectangle { width: parent.width; height: 1; color: "#edf2f7" }
+
+                                Label {
+                                    text: "Vertices del area (" + mapView.vertices.length + ")"
+                                    font.pixelSize: 13; font.bold: true; color: "#4a5568"
+                                }
+
+                                Repeater {
+                                    model: mapView.vertexModel
+                                    delegate: Rectangle {
+                                        width: parent.width; height: 40; color: "#f8fafd"; radius: 8
+                                        RowLayout {
+                                            anchors.fill: parent; anchors.margins: 8; spacing: 10
+                                            Rectangle {
+                                                width: 20; height: 20; radius: 10; color: "#00a651"
+                                                Label { anchors.centerIn: parent; text: index + 1; font.pixelSize: 10; font.bold: true; color: "white" }
+                                            }
+                                            Label { Layout.fillWidth: true; text: model.lat.toFixed(5) + ", " + model.lng.toFixed(5); font.pixelSize: 11; color: "#4a5568"; font.family: "Geist Mono" }
+                                            Button {
+                                                implicitWidth: 24; implicitHeight: 24; flat: true
+                                                contentItem: Label { text: "✕"; color: "#a0aec0"; font.pixelSize: 14; horizontalAlignment: Text.AlignHCenter }
+                                                onClicked: mapView.removeMainPoint(index)
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Column {
+                                    width: parent.width
+                                    spacing: 8
+                                    
+                                    Button {
+                                        id: generarRutaBtn
+                                        width: parent.width
+                                        implicitHeight: 44
+                                        background: Rectangle { radius: 8; color: "#00a651" }
+                                        contentItem: RowLayout {
+                                            anchors.centerIn: parent; spacing: 8
+                                            Label { text: "⚏"; color: "white"; font.pixelSize: 18 } // Placeholder icon
+                                            Label { text: "Generar ruta"; color: "white"; font.bold: true; font.pixelSize: 15 }
+                                        }
+                                        onClicked: {
+                                            mapView.startProcessing()
+                                            // Activar exportar al dar generar ruta (mock)
+                                            exportMisionBtn.enabled = true
+                                        }
+                                    }
+
+                                    RowLayout {
+                                        width: parent.width
+                                        spacing: 10
+                                        Button {
+                                            id: exportMisionBtn
+                                            Layout.fillWidth: true
+                                            implicitHeight: 44
+                                            enabled: false // Se habilita con Generar ruta
+                                            background: Rectangle {
+                                                radius: 8; color: "white"; border.color: exportMisionBtn.enabled ? "#e2e8f0" : "#f1f5f9"
+                                            }
+                                            contentItem: RowLayout {
+                                                anchors.centerIn: parent; spacing: 8
+                                                Label { text: "↧"; color: exportMisionBtn.enabled ? "#4a5568" : "#94a3b8"; font.pixelSize: 18; font.bold: true }
+                                                Label { text: "Exportar"; font.bold: true; color: exportMisionBtn.enabled ? "#4a5568" : "#94a3b8"; font.pixelSize: 15 }
+                                            }
+                                        }
+                                        Button {
+                                            implicitWidth: 44; implicitHeight: 44
+                                            background: Rectangle { radius: 8; color: "#d32f2f" }
+                                            contentItem: Label { text: "🗑"; color: "white"; font.pixelSize: 16; anchors.centerIn: parent }
+                                            onClicked: {
+                                                mapView.vertices = []
+                                                mapView.vertexModel.clear()
+                                                mapView.updatePolygonPaths()
+                                                exportMisionBtn.enabled = false
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // --- ZONAS DE RESTRICCION ---
+                    Column {
+                        width: parent.width
+                        spacing: 12
+                        visible: mapView.vertices.length >= 3
+
+                        RowLayout {
+                            width: parent.width
+                            Label {
+                                text: "ZONAS DE RESTRICCION"
+                                font.pixelSize: 12
+                                font.bold: true
+                                font.capitalization: Font.AllUppercase
+                                color: "#5f6368"
+                                Layout.fillWidth: true
+                            }
+                            Button {
+                                id: addRestrBtn
+                                implicitWidth: 90; implicitHeight: 32; flat: true
+                                background: Rectangle { 
+                                    radius: 6; 
+                                    color: addRestrBtn.pressed ? "#e2e8f0" : (addRestrBtn.hovered ? "#edf2f7" : "#f8fafd")
+                                    border.color: "#e2e8f0"; border.width: 1 
+                                }
+                                contentItem: RowLayout {
+                                    anchors.centerIn: parent; spacing: 4
+                                    Label { text: "+"; color: "#1a2744"; font.pixelSize: 16 }
+                                    Label { text: "Agregar"; color: "#1a2744"; font.pixelSize: 13; font.bold: true }
+                                }
+                                onClicked: {
+                                    mapView.finalizeCurrentRestriction()
+                                    mapView.drawingRestrictions = true
+                                    mapView.drawingMode = false
+                                }
+                            }
+                        }
+                        Column {
+                                width: parent.width
+                                spacing: 12
+                             Repeater {
+                                 id: zonesRepeater
+                                 model: mapView.restrictionZones.length + (mapView.drawingRestrictions ? 1 : 0)
+                                 delegate: Rectangle {
+                                     id: zoneCard
+                                     width: parent.width
+                                     implicitHeight: zoneCardContent.height + 24
+                                     radius: 12
+                                     color: "white"
+                                     border.color: zoneColor
+                                     border.width: expanded ? 1 : 0 
+                                     
+                                     layer.enabled: !expanded
+                                     layer.effect: MultiEffect { shadowEnabled: true; shadowColor: "#10000000"; shadowBlur: 0.1; shadowVerticalOffset: 1 }
+
+                                     property bool isCurrent: index === mapView.restrictionZones.length
+                                     property var zoneData: isCurrent ? null : mapView.restrictionZones[index]
+                                     property var pts: isCurrent ? mapView.currentRestrictionPoints : zoneData.points
+                                     property bool expanded: true // Always show them for now
+                                     property color zoneColor: "#e53935"
+
+                                    Column {
+                                        id: zoneCardContent
+                                        anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top
+                                        anchors.margins: 12
+                                        spacing: 16
+
+                                        MouseArea {
+                                            width: parent.width; height: 32
+                                            onClicked: zoneCard.expanded = !zoneCard.expanded
+                                            RowLayout {
+                                                anchors.fill: parent; spacing: 10
+                                                Rectangle { width: 12; height: 12; radius: 6; color: zoneColor }
+                                                Label { text: isCurrent ? "Nueva Zona" : ("Zona de Restriccion #" + (index + 1)); font.pixelSize: 15; font.bold: true; color: "#070B0F" }
+                                                Item { Layout.fillWidth: true }
+                                                Rectangle {
+                                                    width: 48; height: 24; radius: 6; color: zoneColor
+                                                    Label { anchors.centerIn: parent; text: pts.length + " pts"; font.pixelSize: 11; font.bold: true; color: "white" }
+                                                }
+                                                Label { text: zoneCard.expanded ? "▲" : "▼"; font.pixelSize: 12; color: "#5f6368"; font.bold: true }
+                                            }
+                                        }
+
+                                        Column {
+                                            width: parent.width
+                                            spacing: 16
+                                            visible: zoneCard.expanded
+
+                                            Label { text: isCurrent ? "Zona de exclusion" : zoneData.reason; font.pixelSize: 13; color: "#5f6368" }
+
+                                            Rectangle { width: parent.width; height: 1; color: "#edf2f7" }
+
+                                            Column {
+                                                width: parent.width; spacing: 6
+                                                Label { text: "Nombre"; font.pixelSize: 12; color: "#5f6368" }
+                                                TextField { 
+                                                    width: parent.width; text: isCurrent ? "Zona de dibujo" : zoneData.name
+                                                    enabled: !isCurrent
+                                                    background: Rectangle { radius: 6; border.color: "#e2e8f0"; border.width: 1; color: "white" }
+                                                    font.pixelSize: 13
+                                                    onTextEdited: {
+                                                        var zones = mapView.restrictionZones;
+                                                        zones[index].name = text;
+                                                        mapView.restrictionZones = zones;
+                                                    }
+                                                }
+                                            }
+
+                                            Column {
+                                                width: parent.width; spacing: 6
+                                                Label { text: "Razon"; font.pixelSize: 12; color: "#5f6368" }
+                                                TextField { 
+                                                    width: parent.width; text: isCurrent ? "Zona de exclusion" : zoneData.reason
+                                                    enabled: !isCurrent
+                                                    background: Rectangle { radius: 6; border.color: "#e2e8f0"; border.width: 1; color: "white" }
+                                                    font.pixelSize: 13
+                                                    onTextEdited: {
+                                                        var zones = mapView.restrictionZones;
+                                                        zones[index].reason = text;
+                                                        mapView.restrictionZones = zones;
+                                                    }
+                                                }
+                                            }
+
+                                            Label { text: "Puntos (" + pts.length + ")"; font.pixelSize: 12; color: "#5f6368" }
+
+                                            Column {
+                                                width: parent.width; spacing: 4
+                                                Repeater {
+                                                    model: pts
+                                                    delegate: Rectangle {
+                                                        width: parent.width; height: 40; color: "#fef8f8"; radius: 6
+                                                        RowLayout {
+                                                            anchors.fill: parent; anchors.margins: 8; spacing: 8
+                                                            Label { text: index + 1; font.pixelSize: 11; font.bold: true; color: "#e53935"; width: 20; horizontalAlignment: Text.AlignHCenter }
+                                                            Label { Layout.fillWidth: true; text: modelData.latitude.toFixed(5) + ", " + modelData.longitude.toFixed(5); font.pixelSize: 11; color: "#4a5568"; font.family: "Geist Mono" }
+                                                            Button {
+                                                                implicitWidth: 24; implicitHeight: 24; flat: true
+                                                                contentItem: Label { text: "🗑"; color: "#5f6368"; font.pixelSize: 14; horizontalAlignment: Text.AlignHCenter }
+                                                                onClicked: {
+                                                                    if (zoneCard.isCurrent) {
+                                                                        var cPts = mapView.currentRestrictionPoints; cPts.splice(index, 1); mapView.currentRestrictionPoints = cPts;
+                                                                    } else {
+                                                                        var allZ = mapView.restrictionZones; allZ[index].points.splice(index, 1); 
+                                                                        if (allZ[index].points.length < 3) allZ.splice(index, 1);
+                                                                        mapView.restrictionZones = allZ;
+                                                                    }
+                                                                    mapView.rebuildRestrictionModel(); mapView.recalculateTotalRestrictionArea(); mapView.updatePolygonPaths()
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            Button {
+                                                width: parent.width; implicitHeight: 44
+                                                background: Rectangle { radius: 8; color: "#d32f2f" }
+                                                contentItem: RowLayout {
+                                                    anchors.centerIn: parent; spacing: 8
+                                                    Label { text: "🗑"; color: "white"; font.pixelSize: 16 }
+                                                    Label { text: "Eliminar zona"; color: "white"; font.bold: true; font.pixelSize: 14 }
+                                                }
+                                                onClicked: {
+                                                    if (zoneCard.isCurrent) {
+                                                        mapView.currentRestrictionPoints = [];
+                                                    } else {
+                                                        var allZ = mapView.restrictionZones; allZ.splice(index, 1); mapView.restrictionZones = allZ;
+                                                    }
+                                                    mapView.rebuildRestrictionModel(); mapView.recalculateTotalRestrictionArea(); mapView.updatePolygonPaths()
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // --- ESTADISTICAS ---
+                    Column {
+                        width: parent.width
+                        spacing: 12
+                        visible: mapView.vertices.length > 0 || mapView.restrictionZones.length > 0
+
+                        Label {
+                            text: "ESTADISTICAS"
+                            font.pixelSize: 12
+                            font.bold: true
+                            font.capitalization: Font.AllUppercase
+                            color: "#5f6368"
+                        }
+
+                        GridLayout {
+                            width: parent.width
+                            columns: 2
+                            columnSpacing: 10
+                            rowSpacing: 10
+
+                            // Area
+                            Rectangle {
+                                Layout.fillWidth: true; Layout.preferredHeight: 84
+                                color: "#f8fafd"; radius: 12; border.color: "#e2e8f0"; border.width: 1
+                                Column {
+                                    anchors.centerIn: parent
+                                    spacing: 6
+                                    Row { 
+                                        spacing: 6; anchors.horizontalCenter: parent.horizontalCenter
+                                        Label { text: "⚑"; color: "#5f6368"; font.pixelSize: 13 }
+                                        Label { text: "Area"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase } 
+                                    }
+                                    Label { 
+                                        text: {
+                                            var a = mapView.netArea;
+                                            return a > 10000 ? (a/1000000).toFixed(2) + " km²" : (a > 0 ? a.toFixed(2) + " m²" : "0 m²")
+                                        }
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        font.pixelSize: 16; font.bold: true; color: "#1a2744"
+                                        font.family: "Geist Sans"
+                                    }
+                                }
+                            }
+
+                            // Perimetro
+                            Rectangle {
+                                Layout.fillWidth: true; Layout.preferredHeight: 84
+                                color: "#f8fafd"; radius: 12; border.color: "#e2e8f0"; border.width: 1
+                                Column {
+                                    anchors.centerIn: parent
+                                    spacing: 6
+                                    Row { 
+                                        spacing: 6; anchors.horizontalCenter: parent.horizontalCenter
+                                        Label { text: "📏"; color: "#5f6368"; font.pixelSize: 13 }
+                                        Label { text: "Perimetro"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase } 
+                                    }
+                                    Label { 
+                                        text: {
+                                            var p = mapView.calculatedPerimeter;
+                                            return p > 1000 ? (p/1000).toFixed(2) + " km" : p.toFixed(2) + " m"
+                                        }
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        font.pixelSize: 16; font.bold: true; color: "#1a2744" 
+                                        font.family: "Geist Sans"
+                                    }
+                                }
+                            }
+
+                            // Distancia de vuelo
+                            Rectangle {
+                                Layout.fillWidth: true; Layout.preferredHeight: 84
+                                color: "#f8fafd"; radius: 12; border.color: "#e2e8f0"; border.width: 1
+                                Column {
+                                    anchors.centerIn: parent
+                                    spacing: 6
+                                    Row { 
+                                        spacing: 6; anchors.horizontalCenter: parent.horizontalCenter
+                                        Label { text: "☍"; color: "#5f6368"; font.pixelSize: 13 }
+                                        Label { text: "Distancia"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase } 
+                                    }
+                                    Label { 
+                                        text: "0 m"
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        font.pixelSize: 16; font.bold: true; color: "#1a2744" 
+                                        font.family: "Geist Sans"
+                                    }
+                                }
+                            }
+
+                            // Tiempo estimado
+                            Rectangle {
+                                Layout.fillWidth: true; Layout.preferredHeight: 84
+                                color: "#f8fafd"; radius: 12; border.color: "#e2e8f0"; border.width: 1
+                                Column {
+                                    anchors.centerIn: parent
+                                    spacing: 6
+                                    Row { 
+                                        spacing: 6; anchors.horizontalCenter: parent.horizontalCenter
+                                        Label { text: "⏱"; color: "#5f6368"; font.pixelSize: 13 }
+                                        Label { text: "Tiempo Est."; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase } 
+                                    }
+                                    Label { 
+                                        text: "0 min"
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        font.pixelSize: 16; font.bold: true; color: "#1a2744" 
+                                        font.family: "Geist Sans"
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Item {
+                        width: parent.width
+                        height: 20
+                        visible: !(mapView.vertices.length > 0 || mapView.restrictionZones.length > 0 || mapView.currentRestrictionPoints.length > 0)
+                        Label {
+                            anchors.centerIn: parent
+                            text: "Aucun point sélectionné"
+                            font.pixelSize: 13; color: "#a0aec0"
+                        }
                     }
                 }
             }
         }
     }
 }
-

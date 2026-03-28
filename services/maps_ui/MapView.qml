@@ -26,6 +26,7 @@ Item {
     property real calculatedArea: 0
     property real totalRestrictionArea: 0
     property real netArea: Math.max(0, calculatedArea - totalRestrictionArea)
+    property real calculatedPerimeter: 0
 
     ListModel { id: vertexModel }
 
@@ -35,17 +36,17 @@ Item {
     // Models for results
     ListModel { id: internalPointsModel }
     ListModel { id: subdivisionsModel }
+    ListModel { id: dashModel }
 
     property bool isProcessing: false
     property int processingStage: 0 // 0: Idle, 1: Points, 2: Subdividing, 3: Done // we still have to work on this :ssss
 
     property bool dragModeEnabled: false
 
-    // muestra el poligono y los puntos // hay que trabajar en esto masss. // NOT YETTTT
+    // muestra el poligono y los puntos
     function updatePolygonPaths() {
         // Main polygon (green)
         if (vertices.length >= 3) {
-            // Bridge technique for visual subtraction
             var combinedPath = [];
 
             // Add main outer boundary
@@ -55,17 +56,17 @@ Item {
             // Add holes for each FINALIZED restriction zone
             for (var z = 0; z < restrictionZones.length; z++) {
                 var zone = restrictionZones[z];
-                if (zone.length >= 3) {
-                    for (var k = 0; k < zone.length; k++) combinedPath.push(zone[k]);
-                    combinedPath.push(zone[0]);
-                    combinedPath.push(vertices[0]); // Return to main start point after each bridge
+                if (zone.points && zone.points.length >= 3) {
+                    for (var k = 0; k < zone.points.length; k++) combinedPath.push(zone.points[k]);
+                    combinedPath.push(zone.points[0]);
+                    combinedPath.push(vertices[0]); // Return to main start point
                 }
             }
 
-            // Add hole for CURRENT DRAWING restriction zone if it has >= 3 points
+            // Add hole for CURRENT DRAWING restriction zone
             if (currentRestrictionPoints.length >= 3) {
                 for (var m = 0; m < currentRestrictionPoints.length; m++) combinedPath.push(currentRestrictionPoints[m]);
-                currentRestrictionPoints[0] ? combinedPath.push(currentRestrictionPoints[0]) : null;
+                combinedPath.push(currentRestrictionPoints[0]);
                 combinedPath.push(vertices[0]);
             }
 
@@ -73,14 +74,74 @@ Item {
         } else {
             drawnArea.path = [];
         }
+        updateDashedLines();
+    }
 
-        // Update the visual selection (just for orange points visibility handled by MapItemView)
+    function updateDashedLines() {
+        dashModel.clear();
+        
+        var addDashes = function(path, color) {
+            if (path.length < 2) return;
+            for (var i = 0; i < path.length - 1; i++) {
+                var c1 = path[i];
+                var c2 = path[i+1];
+                
+                // Calculate distance approx to determine number of dashes
+                var dist = Math.sqrt(Math.pow(c2.latitude - c1.latitude, 2) + Math.pow(c2.longitude - c1.longitude, 2));
+                // Even fewer segments for very large gaps (approx 1 dash per 50-60m)
+                var segments = Math.max(2, Math.floor(dist * 6000)); 
+                
+                for (var s = 0; s < segments; s++) {
+                    if (s % 2 === 0) {
+                        var f1 = s / segments;
+                        var f2 = Math.min(1.0, (s + 0.25) / segments); // 25% dash, 75% gap
+                        dashModel.append({
+                            "lat1": c1.latitude + (c2.latitude - c1.latitude) * f1,
+                            "lng1": c1.longitude + (c2.longitude - c1.longitude) * f1,
+                            "lat2": c1.latitude + (c2.latitude - c1.latitude) * f2,
+                            "lng2": c1.longitude + (c2.longitude - c1.longitude) * f2,
+                            "dashColor": color
+                        });
+                    }
+                }
+            }
+        };
+
+        if (vertices.length >= 2) {
+            var mPath = [];
+            for (var i = 0; i < vertices.length; i++) mPath.push(vertices[i]);
+            if (vertices.length >= 3) mPath.push(vertices[0]);
+            addDashes(mPath, "#00a651");
+        }
+
+        for (var z = 0; z < restrictionZones.length; z++) {
+            var zone = restrictionZones[z];
+            if (zone.points.length >= 2) {
+                var zPath = [];
+                for (var p = 0; p < zone.points.length; p++) zPath.push(zone.points[p]);
+                if (zone.points.length >= 3) zPath.push(zone.points[0]);
+                addDashes(zPath, "#e53935");
+            }
+        }
+
+        if (currentRestrictionPoints.length >= 2) {
+            var cPath = [];
+            for (var cp = 0; cp < currentRestrictionPoints.length; cp++) cPath.push(currentRestrictionPoints[cp]);
+            if (currentRestrictionPoints.length >= 3) cPath.push(currentRestrictionPoints[0]);
+            addDashes(cPath, "#e53935");
+        }
     }
 
     function finalizeCurrentRestriction() {
         if (currentRestrictionPoints.length >= 3) {
             var zones = restrictionZones;
-            zones.push(currentRestrictionPoints);
+            zones.push({
+                points: currentRestrictionPoints,
+                name: "Zona Restringida " + (zones.length + 1),
+                reason: "Zona de exclusion",
+                color: "#e53935",
+                visible: true
+            });
             restrictionZones = zones;
             currentRestrictionPoints = [];
             recalculateTotalRestrictionArea();
@@ -91,9 +152,8 @@ Item {
     function recalculateTotalRestrictionArea() {
         var total = 0;
         for (var i = 0; i < restrictionZones.length; i++) {
-            total += calculatePolygonArea(restrictionZones[i]);
+            total += calculatePolygonArea(restrictionZones[i].points);
         }
-        // Add current drawing too
         total += calculatePolygonArea(currentRestrictionPoints);
         totalRestrictionArea = total;
     }
@@ -104,39 +164,44 @@ Item {
         vertices = temp;
         vertexModel.remove(index);
         calculatedArea = calculatePolygonArea(vertices);
+        calculatedPerimeter = calculatePerimeter(vertices);
         updatePolygonPaths();
     }
 
     function removeRestrictionPoint(modelIndex) {
-        // Find which zone and local index this point belongs to
         var point = restrictionModel.get(modelIndex);
         var zIdx = point.zoneIndex;
 
-        if (zIdx === -1) { // Current drawing zone
+        if (zIdx === -1) {
             var current = currentRestrictionPoints;
+            for (var cIdx = 0; cIdx < current.length; cIdx++) {
+                if (Math.abs(current[cIdx].latitude - point.lat) < 0.000001 &&
+                    Math.abs(current[cIdx].longitude - point.lng) < 0.000001) {
+                    current.splice(cIdx, 1);
+                    break;
+                }
+            }
+            currentRestrictionPoints = current;
         } else {
             var zone = restrictionZones[zIdx];
-            // Find which point it is in that zone (scanning by lat/lng)
-            for (var pIdx = 0; pIdx < zone.length; pIdx++) {
-                if (Math.abs(zone[pIdx].latitude - point.lat) < 0.000001 &&
-                    Math.abs(zone[pIdx].longitude - point.lng) < 0.000001) {
-                    zone.splice(pIdx, 1);
+            for (var pIdx = 0; pIdx < zone.points.length; pIdx++) {
+                if (Math.abs(zone.points[pIdx].latitude - point.lat) < 0.000001 &&
+                    Math.abs(zone.points[pIdx].longitude - point.lng) < 0.000001) {
+                    zone.points.splice(pIdx, 1);
                     break;
                 }
             }
 
-            if (zone.length < 3) {
+            if (zone.points.length < 3) {
                 restrictionZones.splice(zIdx, 1);
             } else {
                 restrictionZones[zIdx] = zone;
             }
 
-            // Re-sync restrictionZones to trigger changes
             var zones = restrictionZones;
             restrictionZones = zones;
         }
 
-        // Rebuild model and recalculate
         rebuildRestrictionModel();
         recalculateTotalRestrictionArea();
         updatePolygonPaths();
@@ -146,22 +211,40 @@ Item {
         restrictionModel.clear();
         for (var z = 0; z < restrictionZones.length; z++) {
             var zone = restrictionZones[z];
-            for (var p = 0; p < zone.length; p++) {
+            for (var p = 0; p < zone.points.length; p++) {
                 restrictionModel.append({
-                    "lat": zone[p].latitude,
-                    "lng": zone[p].longitude,
-                    "zoneIndex": z
+                    "lat": zone.points[p].latitude,
+                    "lng": zone.points[p].longitude,
+                    "zoneIndex": z,
+                    "color": zone.color
                 });
             }
         }
-        // Add current drawing points
         for (var c = 0; c < currentRestrictionPoints.length; c++) {
             restrictionModel.append({
                 "lat": currentRestrictionPoints[c].latitude,
                 "lng": currentRestrictionPoints[c].longitude,
-                "zoneIndex": -1
+                "zoneIndex": -1,
+                "color": "#e53935"
             });
         }
+    }
+
+    function syncPointsFromRestrictionModel() {
+        var newCurr = [];
+        var zns = restrictionZones;
+        for (var zi = 0; zi < zns.length; zi++) zns[zi].points = [];
+        
+        for (var i = 0; i < restrictionModel.count; i++) {
+            var m = restrictionModel.get(i);
+            var c = QtPositioning.coordinate(m.lat, m.lng);
+            if (m.zoneIndex === -1) newCurr.push(c);
+            else zns[m.zoneIndex].points.push(c);
+        }
+        restrictionZones = zns;
+        currentRestrictionPoints = newCurr;
+        recalculateTotalRestrictionArea();
+        updatePolygonPaths();
     }
 
     function pan(dx, dy) {
@@ -169,7 +252,6 @@ Item {
     }
 
     function resetDrawingState() {
-        errorLabel.text = ""
         root.vertices = []
         root.restrictionZones = []
         root.currentRestrictionPoints = []
@@ -253,6 +335,17 @@ Item {
         return area;
     }
 
+    function calculatePerimeter(coords) {
+        if (coords.length < 2) return 0;
+        var p = 0;
+        for (var i = 0; i < coords.length; i++) {
+            var c1 = coords[i];
+            var c2 = coords[(i + 1) % coords.length];
+            p += c1.distanceTo(c2);
+        }
+        return p;
+    }
+
     Map {
         id: map
         anchors.fill: parent
@@ -290,18 +383,31 @@ Item {
                     root.vertices = root.vertices.concat([coord])
                     vertexModel.append({ "lat": coord.latitude, "lng": coord.longitude })
                     root.calculatedArea = calculatePolygonArea(root.vertices)
+                    root.calculatedPerimeter = calculatePerimeter(root.vertices)
                 }
                 rebuildRestrictionModel();
                 updatePolygonPaths();
             }
         }
 
-        // Drawn area polygon (Blue)
+        // Drawn area polygon (Green)
         MapPolygon {
             id: drawnArea
-            color: Qt.rgba(0.098, 0.463, 0.824, 0.25) // Blue #1976d2 with opacity
-            border.color: "#1976d2"
-            border.width: 2
+            color: Qt.rgba(0.0, 0.651, 0.318, 0.20) // Green #00a651 with lower opacity (0.20)
+            border.width: 0 // We'll use dashed lines instead
+        }
+
+        // Dashed lines view
+        MapItemView {
+            model: dashModel
+            delegate: MapPolyline {
+                line.width: 3.5 // Thicker for better visibility
+                line.color: model.dashColor
+                path: [
+                    QtPositioning.coordinate(model.lat1, model.lng1),
+                    QtPositioning.coordinate(model.lat2, model.lng2)
+                ]
+            }
         }
 
         // Vertex markers
@@ -309,8 +415,40 @@ Item {
             model: vertexModel
             delegate: MapQuickItem {
                 coordinate: QtPositioning.coordinate(lat, lng)
-                anchorPoint.x: 6; anchorPoint.y: 6
-                sourceItem: Rectangle { width: 12; height: 12; radius: 6; color: "#1976d2"; border.color: "white"; border.width: 2 }
+                anchorPoint.x: 9; anchorPoint.y: 9
+                
+                sourceItem: Rectangle { 
+                    width: 18; height: 18; radius: 9; color: "#00a651"; border.color: "white"; border.width: 1.5 
+                    Label {
+                        anchors.centerIn: parent
+                        text: index + 1
+                        font.pixelSize: 10; font.bold: true; color: "white"
+                    }
+                    
+                    // Use MouseArea with explicit press tracking for robust dragging
+                    MouseArea {
+                        id: markerMA
+                        anchors.fill: parent
+                        property bool isDragging: false
+                        onPressed: isDragging = true
+                        onReleased: isDragging = false
+                        onPositionChanged: (mouse) => {
+                            if (isDragging) {
+                                var mapPoint = markerMA.mapToItem(map, mouse.x, mouse.y);
+                                var point = map.toCoordinate(mapPoint);
+                                // Update real data
+                                var tempV = root.vertices;
+                                tempV[index] = point;
+                                root.vertices = tempV;
+                                // Update model for UI refresh
+                                vertexModel.set(index, { "lat": point.latitude, "lng": point.longitude });
+                                root.calculatedArea = calculatePolygonArea(root.vertices);
+                                root.calculatedPerimeter = calculatePerimeter(root.vertices);
+                                updatePolygonPaths();
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -318,8 +456,32 @@ Item {
             model: restrictionModel
             delegate: MapQuickItem {
                 coordinate: QtPositioning.coordinate(lat, lng)
-                anchorPoint.x: 6; anchorPoint.y: 6
-                sourceItem: Rectangle { width: 12; height: 12; radius: 6; color: "#d32f2f"; border.color: "white"; border.width: 2 }
+                anchorPoint.x: 8; anchorPoint.y: 8
+                sourceItem: Rectangle { 
+                    width: 16; height: 16; radius: 8; color: model.color; border.color: "white"; border.width: 1.5 
+                    Label {
+                        anchors.centerIn: parent
+                        text: index + 1
+                        font.pixelSize: 9; font.bold: true; color: "white"
+                    }
+                    
+                    MouseArea {
+                        id: restrMA
+                        anchors.fill: parent
+                        property bool isDragging: false
+                        onPressed: isDragging = true
+                        onReleased: isDragging = false
+                        onPositionChanged: (mouse) => {
+                            if (isDragging) {
+                                var mapPoint = restrMA.mapToItem(map, mouse.x, mouse.y);
+                                var point = map.toCoordinate(mapPoint);
+                                // Set real-time coordinates in model
+                                restrictionModel.set(index, { "lat": point.latitude, "lng": point.longitude });
+                                syncPointsFromRestrictionModel(); // Recalculate everything
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -567,222 +729,4 @@ Item {
             }
         }
     }
-
-    // Drawing controls
-    Column {
-        anchors.left: parent.left; anchors.bottom: parent.bottom; anchors.margins: 16; spacing: 12
-
-        Rectangle {
-            visible: errorLabel.text.length > 0
-            color: "#ccb71c1c"; radius: 4; width: errorLabel.implicitWidth + 16; height: errorLabel.implicitHeight + 10
-            Label { id: errorLabel; anchors.centerIn: parent; text: ""; color: "white"; font.pixelSize: 12 }
-        }
-
-        Row {
-            spacing: 12
-            Button {
-                id: drawBtn
-                text: root.drawingMode ? qsTr("Finaliser la zone de couverture") : qsTr("Dessiner les points de couverture")
-
-
-                font {
-                    family: "Geist Sans"
-                    pixelSize: 13
-                    bold: true
-                }
-
-
-                leftPadding: 16
-                rightPadding: 16
-                topPadding: 8
-                bottomPadding: 8
-
-                contentItem: Text {
-                    text: drawBtn.text
-                    font: drawBtn.font
-                    color: drawBtn.enabled ? "white" : "#9e9e9e"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    elide: Text.ElideRight
-                }
-
-                background: Rectangle {
-                    implicitWidth: 150
-                    implicitHeight: 45
-                    radius: 8
-                    color: !drawBtn.enabled ? "#e0e0e0" :
-                            (drawBtn.pressed ? "#0d47a1" :
-                            (drawBtn.hovered ? "#1976d2" : (root.drawingMode ? "#1e88e5" : "#031144")))
-
-                    Behavior on color { ColorAnimation { duration: 150 } }
-                }
-
-                onClicked: {
-                    if (root.drawingMode) {
-                        if (root.vertices.length < 3) {
-                            errorLabel.text = qsTr("Au moins 3 points sont nécessaires")
-                            return
-                        }
-                        errorLabel.text = ""
-                        root.drawingMode = false
-                    } else {
-                        resetDrawingState() // Encapsulado para mayor limpieza
-                    }
-                }
-            }
-
-            Button {
-                id: restrictionBtn
-                visible: (root.vertices.length >= 3 && !root.drawingMode) || root.drawingRestrictions || root.restrictionZones.length > 0
-                text: root.drawingRestrictions ? qsTr("Finaliser la zone de restriction") : qsTr("Dessiner les limites")
-                
-                font {
-                    family: "Geist Sans"
-                    pixelSize: 13
-                    bold: true
-                }
-
-                leftPadding: 16
-                rightPadding: 16
-                topPadding: 8
-                bottomPadding: 8
-
-                contentItem: Text {
-                    text: restrictionBtn.text
-                    font: restrictionBtn.font
-                    color: "white"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    elide: Text.ElideRight
-                }
-
-                background: Rectangle {
-                    implicitWidth: 150
-                    implicitHeight: 45
-                    radius: 8
-                    color: restrictionBtn.pressed ? "#b71c1c" :
-                            (restrictionBtn.hovered ? "#f44336" : 
-                            (root.drawingRestrictions ? "#d32f2f" : "#e53935"))
-
-                    Behavior on color { ColorAnimation { duration: 150 } }
-                }
-
-                onClicked: {
-                    if (root.drawingRestrictions) {
-                        if (root.currentRestrictionPoints.length < 3 && root.currentRestrictionPoints.length > 0) {
-                            errorLabel.text = qsTr("Au moins 3 points sont nécessaires")
-                            return
-                        }
-                        root.finalizeCurrentRestriction()
-                        errorLabel.text = ""
-                        root.drawingRestrictions = false
-                    } else {
-                        errorLabel.text = ""
-                        root.drawingRestrictions = true
-                        root.drawingMode = false
-                    }
-                }
-            }
-
-            Button {
-                id: clearBtn
-                text: (root.drawingMode || root.drawingRestrictions) ? qsTr("Annuler") : qsTr("Tout effacer")
-                enabled: root.vertices.length > 0 || root.drawingMode || root.drawingRestrictions
-                
-                font {
-                    family: "Geist Sans"
-                    pixelSize: 13
-                    bold: true
-                }
-
-                leftPadding: 16
-                rightPadding: 16
-                topPadding: 8
-                bottomPadding: 8
-
-                contentItem: Text {
-                    text: clearBtn.text
-                    font: clearBtn.font
-                    color: clearBtn.enabled ? (clearBtn.hovered ? "#d32f2f" : "#455a64") : "#9e9e9e"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    elide: Text.ElideRight
-                }
-
-                background: Rectangle {
-                    implicitWidth: 100
-                    implicitHeight: 45
-                    radius: 8
-                    color: clearBtn.pressed ? "#eceff1" : "white"
-                    border.color: clearBtn.enabled ? (clearBtn.hovered ? "#d32f2f" : "#dde1ec") : "#e0e0e0"
-                    border.width: 1.5
-
-                    Behavior on color { ColorAnimation { duration: 150 } }
-                    Behavior on border.color { ColorAnimation { duration: 150 } }
-                }
-
-                onClicked: {
-                    errorLabel.text = ""
-                    root.vertices = []
-                    root.restrictionZones = []
-                    root.currentRestrictionPoints = []
-                    vertexModel.clear()
-                    restrictionModel.clear()
-                    root.drawingMode = false
-                    root.drawingRestrictions = false
-                    root.calculatedArea = 0
-                    root.totalRestrictionArea = 0
-                    updatePolygonPaths()
-                }
-            }
-        }
-    }
-
-    // Drawing mode indicator (Polished Glassmorphism)
-    Rectangle {
-        anchors.top: parent.top; anchors.horizontalCenter: parent.horizontalCenter; anchors.topMargin: 20
-        visible: root.drawingMode || root.drawingRestrictions
-        
-        color: root.drawingRestrictions ? Qt.rgba(0.827, 0.184, 0.184, 0.85) : Qt.rgba(0.098, 0.463, 0.824, 0.85)
-        radius: 12
-        width: Math.max(hint.implicitWidth, statusLabel.implicitWidth) + 40
-        height: hint.implicitHeight + statusLabel.implicitHeight + 24
-        
-        layer.enabled: true
-        layer.effect: MultiEffect {
-            shadowEnabled: true
-            shadowColor: "#30000000"
-            shadowBlur: 0.1
-            shadowVerticalOffset: 3
-        }
-
-        Column {
-            anchors.centerIn: parent; spacing: 4
-            Label { 
-                id: hint
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: root.drawingRestrictions ? "Dessin de la zone de restriction" : "Dessin de la zone de couverture"
-                color: "white"
-                font.pixelSize: 14
-                font.bold: true
-            }
-            Label { 
-                id: statusLabel
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: (root.drawingRestrictions ? root.currentRestrictionPoints.length : root.vertices.length) + " points posés"
-                color: "#f0f0f0"
-                font.pixelSize: 12
-            }
-        }
-
-        // Animated pulse effect for drawing
-        Rectangle {
-            anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; anchors.leftMargin: 12
-            width: 10; height: 10; radius: 5; color: "white"
-            OpacityAnimator on opacity {
-                from: 1.0; to: 0.2; duration: 800; loops: Animation.Infinite
-            }
-        }
-    }
 }
-
