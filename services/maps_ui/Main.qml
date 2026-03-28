@@ -130,6 +130,89 @@ ApplicationWindow {
         }
     }
 
+    // --- DIALOGUE DE CONFIRMATION ---
+    Dialog {
+        id: deleteConfirmDialog
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        width: 300
+        modal: true
+        
+        property int targetType: 0 // 0: mission, 1: restriction
+        property int zoneIdx: -1
+        property int pIdx: -1
+        
+        background: Rectangle { 
+            radius: 12; color: "white" 
+            border.color: "#e2e8f0"; border.width: 1 
+        }
+        
+        ColumnLayout {
+            anchors.fill: parent; anchors.margins: 24; spacing: 18
+            
+            Rectangle {
+                Layout.preferredWidth: 48; Layout.preferredHeight: 48
+                Layout.alignment: Qt.AlignHCenter
+                color: "#fef2f2"; radius: 24
+                Label {
+                    anchors.centerIn: parent; text: "🗑"; font.pixelSize: 22; color: "#d32f2f"
+                }
+            }
+            
+            Label {
+                text: "Supprimer le point ?"
+                font.pixelSize: 17; font.bold: true; color: "#1a2744"
+                Layout.alignment: Qt.AlignHCenter
+            }
+            
+            Label {
+                text: "Cette action est irréversible."
+                font.pixelSize: 14; color: "#64748b"
+                Layout.alignment: Qt.AlignHCenter
+            }
+            
+            RowLayout {
+                Layout.fillWidth: true; spacing: 12; Layout.topMargin: 8
+                
+                Button {
+                    Layout.fillWidth: true; implicitHeight: 40; flat: true
+                    background: Rectangle { radius: 8; color: "transparent"; border.color: "#e2e8f0"; border.width: 1 }
+                    contentItem: Label { text: "Annuler"; color: "#475569"; font.bold: true; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+                    onClicked: deleteConfirmDialog.close()
+                }
+                
+                Button {
+                    Layout.fillWidth: true; implicitHeight: 40
+                    background: Rectangle { radius: 8; color: "#d32f2f" }
+                    contentItem: Label { text: "Supprimer"; color: "white"; font.bold: true; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+                    onClicked: {
+                        if (deleteConfirmDialog.targetType === 0) {
+                            mapView.removeMainPoint(deleteConfirmDialog.pIdx);
+                        } else {
+                            if (deleteConfirmDialog.zoneIdx === -1) { // Current drawing
+                                var current = mapView.currentRestrictionPoints;
+                                current.splice(deleteConfirmDialog.pIdx, 1);
+                                mapView.currentRestrictionPoints = current;
+                                mapView.rebuildRestrictionModel();
+                                mapView.recalculateTotalRestrictionArea();
+                                mapView.updatePolygonPaths();
+                            } else { // Finalized zone
+                                var zones = mapView.restrictionZones;
+                                zones[deleteConfirmDialog.zoneIdx].points.splice(deleteConfirmDialog.pIdx, 1);
+                                if (zones[deleteConfirmDialog.zoneIdx].points.length < 3) zones.splice(deleteConfirmDialog.zoneIdx, 1);
+                                mapView.restrictionZones = zones.slice();
+                                mapView.rebuildRestrictionModel();
+                                mapView.recalculateTotalRestrictionArea();
+                                mapView.updatePolygonPaths();
+                            }
+                        }
+                        deleteConfirmDialog.close()
+                    }
+                }
+            }
+        }
+    }
+
     RowLayout {
         anchors.fill: parent
         spacing: 0
@@ -501,8 +584,12 @@ ApplicationWindow {
                                             Label { Layout.fillWidth: true; text: model.lat.toFixed(5) + ", " + model.lng.toFixed(5); font.pixelSize: 11; color: "#4a5568"; font.family: "Geist Mono" }
                                             Button {
                                                 implicitWidth: 24; implicitHeight: 24; flat: true
-                                                contentItem: Label { text: "✕"; color: "#a0aec0"; font.pixelSize: 14; horizontalAlignment: Text.AlignHCenter }
-                                                onClicked: mapView.removeMainPoint(index)
+                                                contentItem: Label { text: "🗑"; color: "#a0aec0"; font.pixelSize: 14; horizontalAlignment: Text.AlignHCenter }
+                                                onClicked: {
+                                                    deleteConfirmDialog.targetType = 0
+                                                    deleteConfirmDialog.pIdx = index
+                                                    deleteConfirmDialog.open()
+                                                }
                                             }
                                         }
                                     }
@@ -590,7 +677,7 @@ ApplicationWindow {
                                 contentItem: RowLayout {
                                     anchors.centerIn: parent; spacing: 4
                                     Label { text: "+"; color: "#1a2744"; font.pixelSize: 16 }
-                                    Label { text: "Agregar"; color: "#1a2744"; font.pixelSize: 13; font.bold: true }
+                                    Label { text: "Ajouter"; color: "#1a2744"; font.pixelSize: 13; font.bold: true }
                                 }
                                 onClicked: {
                                     mapView.finalizeCurrentRestriction()
@@ -622,6 +709,9 @@ ApplicationWindow {
                                      property var pts: isCurrent ? mapView.currentRestrictionPoints : zoneData.points
                                      property bool expanded: true // Always show them for now
                                      property color zoneColor: "#e53935"
+                                     
+                                     // Stable property for point numbering
+                                     property int pointOffset: isCurrent ? mapView.getTotalPointsBeforeZone(mapView.restrictionZones.length) : mapView.getTotalPointsBeforeZone(index)
 
                                     Column {
                                         id: zoneCardContent
@@ -632,10 +722,11 @@ ApplicationWindow {
                                         MouseArea {
                                             width: parent.width; height: 32
                                             onClicked: zoneCard.expanded = !zoneCard.expanded
+
                                             RowLayout {
                                                 anchors.fill: parent; spacing: 10
                                                 Rectangle { width: 12; height: 12; radius: 6; color: zoneColor }
-                                                Label { text: isCurrent ? "Nueva Zona" : ("Zona de Restriccion #" + (index + 1)); font.pixelSize: 15; font.bold: true; color: "#070B0F" }
+                                                Label { text: isCurrent ? "Nueva Zona" : ("Zone de Restriction #" + (index + 1)); font.pixelSize: 15; font.bold: true; color: "#070B0F" }
                                                 Item { Layout.fillWidth: true }
                                                 Rectangle {
                                                     width: 48; height: 24; radius: 6; color: zoneColor
@@ -650,13 +741,13 @@ ApplicationWindow {
                                             spacing: 16
                                             visible: zoneCard.expanded
 
-                                            Label { text: isCurrent ? "Zona de exclusion" : zoneData.reason; font.pixelSize: 13; color: "#5f6368" }
+                                            Label { text: isCurrent ? "Zone d'exclusion" : zoneData.reason; font.pixelSize: 13; color: "#5f6368" }
 
                                             Rectangle { width: parent.width; height: 1; color: "#edf2f7" }
 
                                             Column {
                                                 width: parent.width; spacing: 6
-                                                Label { text: "Nombre"; font.pixelSize: 12; color: "#5f6368" }
+                                                Label { text: "Nom"; font.pixelSize: 12; color: "#5f6368" }
                                                 TextField { 
                                                     width: parent.width; text: isCurrent ? "Zona de dibujo" : zoneData.name
                                                     enabled: !isCurrent
@@ -672,7 +763,7 @@ ApplicationWindow {
 
                                             Column {
                                                 width: parent.width; spacing: 6
-                                                Label { text: "Razon"; font.pixelSize: 12; color: "#5f6368" }
+                                                Label { text: "Raison"; font.pixelSize: 12; color: "#5f6368" }
                                                 TextField { 
                                                     width: parent.width; text: isCurrent ? "Zona de exclusion" : zoneData.reason
                                                     enabled: !isCurrent
@@ -686,7 +777,7 @@ ApplicationWindow {
                                                 }
                                             }
 
-                                            Label { text: "Puntos (" + pts.length + ")"; font.pixelSize: 12; color: "#5f6368" }
+                                            Label { text: "Points (" + pts.length + ")"; font.pixelSize: 12; color: "#5f6368" }
 
                                             Column {
                                                 width: parent.width; spacing: 4
@@ -696,20 +787,19 @@ ApplicationWindow {
                                                         width: parent.width; height: 40; color: "#fef8f8"; radius: 6
                                                         RowLayout {
                                                             anchors.fill: parent; anchors.margins: 8; spacing: 8
-                                                            Label { text: index + 1; font.pixelSize: 11; font.bold: true; color: "#e53935"; width: 20; horizontalAlignment: Text.AlignHCenter }
+                                                            Label { 
+                                                                text: (zoneCard.pointOffset + index + 1)
+                                                                font.pixelSize: 11; font.bold: true; color: "#e53935"; width: 22; horizontalAlignment: Text.AlignHCenter 
+                                                            }
                                                             Label { Layout.fillWidth: true; text: modelData.latitude.toFixed(5) + ", " + modelData.longitude.toFixed(5); font.pixelSize: 11; color: "#4a5568"; font.family: "Geist Mono" }
                                                             Button {
                                                                 implicitWidth: 24; implicitHeight: 24; flat: true
                                                                 contentItem: Label { text: "🗑"; color: "#5f6368"; font.pixelSize: 14; horizontalAlignment: Text.AlignHCenter }
                                                                 onClicked: {
-                                                                    if (zoneCard.isCurrent) {
-                                                                        var cPts = mapView.currentRestrictionPoints; cPts.splice(index, 1); mapView.currentRestrictionPoints = cPts;
-                                                                    } else {
-                                                                        var allZ = mapView.restrictionZones; allZ[index].points.splice(index, 1); 
-                                                                        if (allZ[index].points.length < 3) allZ.splice(index, 1);
-                                                                        mapView.restrictionZones = allZ;
-                                                                    }
-                                                                    mapView.rebuildRestrictionModel(); mapView.recalculateTotalRestrictionArea(); mapView.updatePolygonPaths()
+                                                                    deleteConfirmDialog.targetType = 1
+                                                                    deleteConfirmDialog.zoneIdx = zoneCard.isCurrent ? -1 : index 
+                                                                    deleteConfirmDialog.pIdx = index
+                                                                    deleteConfirmDialog.open()
                                                                 }
                                                             }
                                                         }
@@ -723,7 +813,7 @@ ApplicationWindow {
                                                 contentItem: RowLayout {
                                                     anchors.centerIn: parent; spacing: 8
                                                     Label { text: "🗑"; color: "white"; font.pixelSize: 16 }
-                                                    Label { text: "Eliminar zona"; color: "white"; font.bold: true; font.pixelSize: 14 }
+                                                    Label { text: "Supprimer la zone"; color: "white"; font.bold: true; font.pixelSize: 14 }
                                                 }
                                                 onClicked: {
                                                     if (zoneCard.isCurrent) {

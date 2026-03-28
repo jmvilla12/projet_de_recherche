@@ -137,16 +137,25 @@ Item {
             var zones = restrictionZones;
             zones.push({
                 points: currentRestrictionPoints,
-                name: "Zona Restringida " + (zones.length + 1),
-                reason: "Zona de exclusion",
-                color: "#e53935",
-                visible: true
+                name: "Zone de Restriction #" + (zones.length + 1),
+                reason: "Zone d'exclusion",
+                color: "#e53935"
             });
-            restrictionZones = zones;
+            // Force property update by using a fresh array reference
+            restrictionZones = zones.slice(); 
             currentRestrictionPoints = [];
             recalculateTotalRestrictionArea();
+            rebuildRestrictionModel();
             updatePolygonPaths();
         }
+    }
+
+    function getTotalPointsBeforeZone(zoneIdx) {
+        var count = 0;
+        for (var i = 0; i < Math.min(zoneIdx, restrictionZones.length); i++) {
+            count += restrictionZones[i].points.length;
+        }
+        return count;
     }
 
     function recalculateTotalRestrictionArea() {
