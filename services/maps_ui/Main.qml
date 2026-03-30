@@ -12,14 +12,24 @@ ApplicationWindow {
     minimumWidth: 900
     minimumHeight: 600
     visible: true
-    title: "PDR"
+    title: "IMT - Drone Path Planner"
+
+    // --- STATE ---
+    property int connectionState: 0 // 0: Desconectado, 1: Conectando, 2: Conectado
+    Timer {
+        id: connectionTimer
+        interval: 2000
+        repeat: false
+        onTriggered: root.connectionState = 2
+    }
 
     header: ToolBar {
-        implicitHeight: 50 // Un poco más de aire para que luzca mejor
+        implicitHeight: 50
 
         background: Rectangle {
             color: "#FFFFFF"
-            // Opcional: una línea fina gris abajo para separar del mapa
+
+            // Línea gris
             Rectangle {
                 anchors.bottom: parent.bottom
                 width: parent.width
@@ -67,39 +77,114 @@ ApplicationWindow {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 20
 
-                // Indicador de Desconectado (estilo cápsula)
+                // Pill GPS (Only if Connected)
                 Rectangle {
-                    width: 130
-                    height: 24
-                    color: "#E6ECF1"
-                    radius: 16
+                    visible: root.connectionState === 2
+                    width: gpsRow.width + 24
+                    height: 28
+                    color: "#e2e8f0"
+                    radius: 8
+                    anchors.verticalCenter: parent.verticalCenter
+                    Row {
+                        id: gpsRow
+                        anchors.centerIn: parent
+                        spacing: 8
+                        Image {
+                            source: "/qt/qml/projet_de_recherche/assets/icons/Location_Searching.svg"
+                            sourceSize: Qt.size(14, 14)
+                            anchors.verticalCenter: parent.verticalCenter
+                            layer.enabled: true
+                            layer.effect: MultiEffect { colorization: 1.0; colorizationColor: "#00a651" }
+                        }
+                        Label {
+                            text: "GPS Drone: 19.43365, -99.13587  0m"
+                            color: "#4a5568"
+                            font { family: "Geist Sans"; pixelSize: 13; letterSpacing: -0.2 }
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+                }
+
+                // Pill Connection Status
+                Rectangle {
+                    width: connRow.width + 24
+                    height: 28
+                    color: root.connectionState === 2 ? "#e6f4ea" : (root.connectionState === 1 ? "#fff3e0" : "#E6ECF1")
+                    radius: 14
                     anchors.verticalCenter: parent.verticalCenter
 
                     Row {
+                        id: connRow
                         anchors.centerIn: parent
                         spacing: 8
-                        Image{
-                            source: "/qt/qml/projet_de_recherche/assets/icons/wifi_off.svg"
+                        
+                        Image {
+                            source: root.connectionState === 2 ? "/qt/qml/projet_de_recherche/assets/icons/wifi_off.svg" : 
+                                   (root.connectionState === 1 ? "/qt/qml/projet_de_recherche/assets/icons/circulo_dibujar.svg" : "/qt/qml/projet_de_recherche/assets/icons/wifi_off.svg")
                             sourceSize.width: 14
                             sourceSize.height: 14
+                            anchors.verticalCenter: parent.verticalCenter
+                            layer.enabled: true
+                            layer.effect: MultiEffect {
+                                colorization: 1.0
+                                colorizationColor: root.connectionState === 2 ? "#00a651" : (root.connectionState === 1 ? "#f59e0b" : "#51565A")
+                            }
+                            RotationAnimation on rotation {
+                                loops: Animation.Infinite; from: 0; to: 360; duration: 1000; running: root.connectionState === 1
+                            }
                         }
-                            // Icono simple o usa un Image
-                        Text {
-                            text: "Déconnecté"
-                            color: "#51565A"
-                            font { family: "Geist Sans"; pixelSize: 12; letterSpacing: -0.5}
 
+                        Text {
+                            text: root.connectionState === 2 ? "Conectado" : (root.connectionState === 1 ? "Conectando..." : "Desconectado")
+                            color: root.connectionState === 2 ? "#00a651" : (root.connectionState === 1 ? "#f59e0b" : "#51565A")
+                            font { family: "Geist Sans"; pixelSize: 13; bold: root.connectionState === 2; letterSpacing: -0.2}
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        
+                        Rectangle {
+                            visible: root.connectionState === 2
+                            width: 60; height: 18; color: "#cbd5e1"; radius: 4
+                            anchors.verticalCenter: parent.verticalCenter
+                            Text {
+                                anchors.centerIn: parent; text: "Inactivo"; color: "#4a5568"
+                                font { family: "Geist Sans"; pixelSize: 10 }
+                            }
+                        }
+                        
+                        Row {
+                            visible: root.connectionState === 2
+                            spacing: 4
+                            anchors.verticalCenter: parent.verticalCenter
+                            Text {
+                                text: "🔋"
+                                font.pixelSize: 12
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Text {
+                                text: "85%"
+                                color: "#00a651"
+                                font { family: "Geist Sans"; pixelSize: 13; bold: true }
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
                         }
                     }
                 }
 
                 // Texto de estado
                 Label {
-                    text: mapView.drawingMode ? "Dessin de la mission..." :
-                          (mapView.drawingRestrictions ? "Dessin de la zone de restriction..." : "Aucune zone sélectionnée")
+                    text: root.connectionState === 2 ? "Sin mision activa" : (mapView.drawingMode ? "Dessin de la mission..." : "Aucune zone sélectionnée")
                     color: "#5f6368"
                     anchors.verticalCenter: parent.verticalCenter
                     font { family: "Geist Sans"; pixelSize: 14; letterSpacing: -0.5}
+                }
+                
+                // Dark mode Icon
+                Button {
+                    visible: root.connectionState === 2
+                    implicitWidth: 28; implicitHeight: 28; flat: true
+                    anchors.verticalCenter: parent.verticalCenter
+                    background: Rectangle { color: "#f8fafd"; radius: 6; border.color: "#e2e8f0"; border.width: 1 }
+                    contentItem: Text { text: "🌙"; anchors.centerIn: parent; font.pixelSize: 14 }
                 }
 
                 // Icono de información con Hover
@@ -116,14 +201,13 @@ ApplicationWindow {
                         visible: infoHover.hovered
                         parent: Overlay.overlay
                         width: 180; height: 50; radius: 4; color: "#333333"
-                        // Position below the hover area
                         x: root.width - width - 16
                         y: 55
 
                         Column {
                             anchors.centerIn: parent
                             Text { text: "Créé par:"; color: "white"; font.pixelSize: 10; font.bold: true; anchors.horizontalCenter: parent.horizontalCenter }
-                            Text { text: "Nombre de los Creadores"; color: "white"; font.pixelSize: 12; anchors.horizontalCenter: parent.horizontalCenter }
+                            Text { text: "S.R + J.V + J.V"; color: "white"; font.pixelSize: 12; anchors.horizontalCenter: parent.horizontalCenter }
                         }
                     }
                 }
@@ -222,7 +306,7 @@ ApplicationWindow {
                     Rectangle {
                         id: droneStatusCard
                         width: parent.width
-                        height: 150
+                        implicitHeight: mainStatusLayout.implicitHeight + 32
                         color: "white"
                         radius: 12
                         border.color: "#edf2f7"
@@ -230,33 +314,42 @@ ApplicationWindow {
 
                         layer.enabled: true
                         layer.effect: MultiEffect {
-                            shadowEnabled: true
-                            shadowColor: "#08000000"
-                            shadowBlur: 0.1
-                            shadowVerticalOffset: 2
+                            shadowEnabled: true; shadowColor: "#08000000"; shadowBlur: 0.1; shadowVerticalOffset: 2
                         }
 
+                        // Loader-like visibility implementation
                         ColumnLayout {
-                            anchors.fill: parent
+                            id: mainStatusLayout
+                            anchors.top: parent.top
+                            anchors.left: parent.left
+                            anchors.right: parent.right
                             anchors.margins: 16
-                            spacing: 0
+                            spacing: 12
 
+                            // 1. HEADER ROW (Shared)
                             RowLayout {
                                 Layout.fillWidth: true
                                 spacing: 10
 
                                 Row {
-                                    spacing: 8
+                                    spacing: 6
                                     Image {
-                                        source: "/qt/qml/projet_de_recherche/assets/icons/wifi_off.svg"
+                                        source: root.connectionState === 2 ? "/qt/qml/projet_de_recherche/assets/icons/wifi_off.svg" : (root.connectionState === 1 ? "/qt/qml/projet_de_recherche/assets/icons/circulo_dibujar.svg" : "/qt/qml/projet_de_recherche/assets/icons/wifi_off.svg")
                                         sourceSize: Qt.size(16, 16)
-                                        opacity: 0.7
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        layer.enabled: true
+                                        layer.effect: MultiEffect {
+                                            colorization: 1.0
+                                            colorizationColor: root.connectionState === 2 ? "#00a651" : (root.connectionState === 1 ? "#f59e0b" : "#070B0F")
+                                        }
+                                        RotationAnimation on rotation { loops: Animation.Infinite; from: 0; to: 360; duration: 1000; running: root.connectionState === 1 }
                                     }
                                     Label {
-                                        text: "Déconnecté"
-                                        font.pixelSize: 14
-                                        font.bold: false
+                                        text: root.connectionState === 2 ? "Conectado" : (root.connectionState === 1 ? "Conectando..." : "Desconectado")
+                                        font.pixelSize: 15
+                                        font.bold: true
                                         color: "#070B0F"
+                                        anchors.verticalCenter: parent.verticalCenter
                                     }
                                 }
 
@@ -264,63 +357,177 @@ ApplicationWindow {
 
                                 Button {
                                     id: connectBtn
-                                    implicitWidth: 110
-                                    implicitHeight: 30
+                                    Layout.preferredWidth: 105
+                                    implicitHeight: 32
 
                                     background: Rectangle {
-                                        color: connectBtn.hovered ? "#e1e9f0" : "#f0f5f9"
-                                        border.color: "#d1dce5"
+                                        color: connectBtn.hovered ? "#e1e9f0" : (root.connectionState === 1 ? "#fafafa" : "#f8fafd")
+                                        border.color: "#e2e8f0"
                                         border.width: 1
                                         radius: 8
                                     }
 
-                                    contentItem: Item {
-                                        Row {
-                                            anchors.centerIn: parent
-                                            spacing: 8
-                                            Image {
-                                                source: "/qt/qml/projet_de_recherche/assets/icons/wifi_off.svg"
-                                                sourceSize: Qt.size(15, 15)
-                                                opacity: 0.8
-                                                anchors.verticalCenter: parent.verticalCenter
-                                            }
-                                            Label {
-                                                text: "Connecter"
-                                                font.pixelSize: 13
-                                                font.bold: true
-                                                color: "#070B0F"
-                                                anchors.verticalCenter: parent.verticalCenter
-                                                font.letterSpacing: -0.2
-                                            }
+                                    contentItem: Row {
+                                        anchors.centerIn: parent
+                                        spacing: 8
+                                        Image {
+                                            source: "/qt/qml/projet_de_recherche/assets/icons/wifi_off.svg"
+                                            sourceSize: Qt.size(15, 15)
+                                            opacity: root.connectionState === 1 ? 0.4 : 0.8
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            layer.enabled: true
+                                            layer.effect: MultiEffect { colorization: 1.0; colorizationColor: "#000000" }
+                                        }
+                                        Label {
+                                            text: root.connectionState === 2 ? "Desconectar" : "Conectar"
+                                            font.pixelSize: 13
+                                            color: root.connectionState === 1 ? "#a0aec0" : "#070B0F"
+                                            anchors.verticalCenter: parent.verticalCenter
+                                        }
+                                    }
+                                    onClicked: {
+                                        if (root.connectionState === 0) {
+                                            root.connectionState = 1;
+                                            connectionTimer.start();
+                                        } else if (root.connectionState === 2) {
+                                            root.connectionState = 0;
                                         }
                                     }
                                 }
                             }
 
-                            Item { Layout.fillHeight: true }
-
+                            // 2. DISCONNECTED / CONNECTING CONTENT
                             Column {
-                                Layout.fillWidth: true
-                                Layout.alignment: Qt.AlignHCenter
+                                Layout.fillWidth: true; Layout.alignment: Qt.AlignHCenter
                                 spacing: 12
+                                visible: root.connectionState !== 2
 
+                                Item { width: 1; height: 10 }
                                 Image {
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     source: "/qt/qml/projet_de_recherche/assets/icons/wifi_off.svg"
                                     sourceSize: Qt.size(32, 32)
                                     opacity: 0.1
                                 }
-
                                 Label {
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     text: "Connectez votre drone pour consulter"
-                                    font.pixelSize: 13
-                                    color: "#5f6368"
-                                    horizontalAlignment: Text.AlignHCenter
+                                    font.pixelSize: 13; color: "#5f6368"; horizontalAlignment: Text.AlignHCenter
                                 }
+                                Item { width: 1; height: 10 }
                             }
 
-                            Item { Layout.fillHeight: true }
+                            // 3. CONNECTED CONTENT
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                visible: root.connectionState === 2
+                                spacing: 12
+
+                                // Inactivo
+                                Rectangle {
+                                    Layout.fillWidth: true; height: 32; color: "#f1f5f9"; radius: 6; border.color: "#cbd5e1"; border.width: 1
+                                    Label { anchors.centerIn: parent; text: "INACTIVO"; color: "#64748b"; font.bold: true; font.pixelSize: 13 }
+                                }
+
+                                // Bateria & Senal
+                                RowLayout {
+                                    Layout.fillWidth: true; spacing: 12
+
+                                    Rectangle {
+                                        Layout.fillWidth: true; height: 75; color: "#f8fafc"; radius: 8
+                                        Column {
+                                            anchors.fill: parent; anchors.margins: 12; spacing: 4
+                                            Row {
+                                                spacing: 6
+                                                Text { text: "🔋"; font.pixelSize: 14 }
+                                                Label { text: "Bateria"; color: "#64748b"; font.pixelSize: 13 }
+                                            }
+                                            Label { text: "84.97"; color: "#00a651"; font.pixelSize: 20; font.bold: true; font.family: "Geist Mono" }
+                                        }
+                                    }
+                                    Rectangle {
+                                        Layout.fillWidth: true; height: 75; color: "#f8fafc"; radius: 8
+                                        Column {
+                                            anchors.fill: parent; anchors.margins: 12; spacing: 4
+                                            Row {
+                                                spacing: 6
+                                                Text { text: "📶"; font.pixelSize: 14 }
+                                                Label { text: "Senal"; color: "#64748b"; font.pixelSize: 13 }
+                                            }
+                                            Label { text: "90.42"; color: "#000000"; font.pixelSize: 20; font.bold: true; font.family: "Geist Mono" }
+                                        }
+                                    }
+                                }
+
+                                // GPS Info
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    implicitHeight: gpsColLayout.implicitHeight + 32
+                                    color: "#f8fafc"; border.color: "#e2e8f0"; border.width: 1; radius: 8
+                                    
+                                    ColumnLayout {
+                                        id: gpsColLayout
+                                        anchors.top: parent.top
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.margins: 16
+                                        spacing: 16
+
+                                        RowLayout {
+                                            Layout.fillWidth: true
+                                            Image {
+                                                source: "/qt/qml/projet_de_recherche/assets/icons/Location_Searching.svg"
+                                                sourceSize: Qt.size(16,16)
+                                                layer.enabled: true; layer.effect: MultiEffect { colorization: 1.0; colorizationColor: "#00a651" }
+                                            }
+                                            Label { text: "GPS del Drone"; font.bold: true; font.pixelSize: 14; Layout.fillWidth: true }
+                                            Text { text: "🛰"; font.pixelSize: 14; opacity: 0.6 }
+                                            Label { text: "13 sats"; color: "#64748b"; font.pixelSize: 13 }
+                                        }
+
+                                        RowLayout {
+                                            Layout.fillWidth: true
+                                            Column {
+                                                spacing: 4
+                                                Label { text: "Lat:"; color: "#64748b"; font.family: "Geist Mono"; font.pixelSize: 14 }
+                                                Label { text: "Lng:"; color: "#64748b"; font.family: "Geist Mono"; font.pixelSize: 14 }
+                                            }
+                                            Item { Layout.fillWidth: true }
+                                            Column {
+                                                spacing: 4
+                                                Label { text: "19.43"; font.family: "Geist Mono"; font.pixelSize: 14; horizontalAlignment: Text.AlignRight }
+                                                Label { text: "-99.13"; font.family: "Geist Mono"; font.pixelSize: 14; horizontalAlignment: Text.AlignRight }
+                                            }
+                                        }
+
+                                        RowLayout {
+                                            Layout.fillWidth: true
+                                            Column {
+                                                Layout.fillWidth: true
+                                                Text { text: "◬"; font.pixelSize: 16; color: "#64748b"; anchors.horizontalCenter: parent.horizontalCenter }
+                                                Label { text: "0.0m"; font.bold: true; font.pixelSize: 16; anchors.horizontalCenter: parent.horizontalCenter }
+                                                Label { text: "Altitud"; color: "#64748b"; font.pixelSize: 12; anchors.horizontalCenter: parent.horizontalCenter }
+                                            }
+                                            Column {
+                                                Layout.fillWidth: true
+                                                Text { text: "⏱"; font.pixelSize: 16; color: "#64748b"; anchors.horizontalCenter: parent.horizontalCenter }
+                                                Label { text: "0.0"; font.bold: true; font.pixelSize: 16; anchors.horizontalCenter: parent.horizontalCenter }
+                                                Label { text: "m/s"; color: "#64748b"; font.pixelSize: 12; anchors.horizontalCenter: parent.horizontalCenter }
+                                            }
+                                            Column {
+                                                Layout.fillWidth: true
+                                                Text { text: "🧭"; font.pixelSize: 16; color: "#64748b"; anchors.horizontalCenter: parent.horizontalCenter }
+                                                Label { text: "174°"; font.bold: true; font.pixelSize: 16; anchors.horizontalCenter: parent.horizontalCenter }
+                                                Label { text: "Heading"; color: "#64748b"; font.pixelSize: 12; anchors.horizontalCenter: parent.horizontalCenter }
+                                            }
+                                        }
+
+                                        Label { Layout.alignment: Qt.AlignHCenter; text: "Precision: ±3.9m"; color: "#64748b"; font.pixelSize: 12 }
+                                    }
+                                }
+
+                                Label { Layout.alignment: Qt.AlignHCenter; text: "Actualizado: 11:56:26 p.m."; color: "#64748b"; font.pixelSize: 12 }
+                            }
                         }
                     }
 
