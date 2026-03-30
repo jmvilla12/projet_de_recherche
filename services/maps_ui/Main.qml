@@ -346,7 +346,7 @@ ApplicationWindow {
                                     }
                                     Label {
                                         text: root.connectionState === 2 ? "Conectado" : (root.connectionState === 1 ? "Conectando..." : "Desconectado")
-                                        font.pixelSize: 15
+                                        font.pixelSize: 14
                                         font.bold: true
                                         color: "#070B0F"
                                         anchors.verticalCenter: parent.verticalCenter
@@ -357,8 +357,9 @@ ApplicationWindow {
 
                                 Button {
                                     id: connectBtn
-                                    Layout.preferredWidth: 105
                                     implicitHeight: 32
+                                    leftPadding: 10
+                                    rightPadding: 10
 
                                     background: Rectangle {
                                         color: connectBtn.hovered ? "#e1e9f0" : (root.connectionState === 1 ? "#fafafa" : "#f8fafd")
@@ -368,11 +369,10 @@ ApplicationWindow {
                                     }
 
                                     contentItem: Row {
-                                        anchors.centerIn: parent
-                                        spacing: 8
+                                        spacing: 6
                                         Image {
                                             source: "/qt/qml/projet_de_recherche/assets/icons/wifi_off.svg"
-                                            sourceSize: Qt.size(15, 15)
+                                            sourceSize: Qt.size(14, 14)
                                             opacity: root.connectionState === 1 ? 0.4 : 0.8
                                             anchors.verticalCenter: parent.verticalCenter
                                             layer.enabled: true
@@ -380,7 +380,7 @@ ApplicationWindow {
                                         }
                                         Label {
                                             text: root.connectionState === 2 ? "Desconectar" : "Conectar"
-                                            font.pixelSize: 13
+                                            font.pixelSize: 12
                                             color: root.connectionState === 1 ? "#a0aec0" : "#070B0F"
                                             anchors.verticalCenter: parent.verticalCenter
                                         }
