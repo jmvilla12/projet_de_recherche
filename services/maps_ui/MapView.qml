@@ -377,8 +377,8 @@ Item {
             PluginParameter { name: "osm.mapping.providersrepository.disabled"; value: "true" }
         }
 
-        center: QtPositioning.coordinate(50.62925, 3.057256)
-        zoomLevel: 14
+        center: QtPositioning.coordinate(-33.7218295, 150.6682616)
+        zoomLevel: 16
 
         onSupportedMapTypesChanged: {
             for (var i = 0; i < supportedMapTypes.length; i++) {

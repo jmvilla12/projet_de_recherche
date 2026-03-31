@@ -15,7 +15,7 @@ ApplicationWindow {
     title: "IMT - Drone Path Planner"
 
     // --- STATE ---
-    property int connectionState: 0 // 0: Desconectado, 1: Conectando, 2: Conectado
+    property int connectionState: 0 // 0: Déconnecté, 1: En train de connecter, 2: Connecté
     Timer {
         id: connectionTimer
         interval: 2000
@@ -135,7 +135,7 @@ ApplicationWindow {
                         }
 
                         Text {
-                            text: root.connectionState === 2 ? "Conectado" : (root.connectionState === 1 ? "Conectando..." : "Desconectado")
+                            text: root.connectionState === 2 ? "Connecté" : (root.connectionState === 1 ? "Connexion en cours..." : "Déconnecté")
                             color: root.connectionState === 2 ? "#00a651" : (root.connectionState === 1 ? "#f59e0b" : "#51565A")
                             font { family: "Geist Sans"; pixelSize: 13; bold: root.connectionState === 2; letterSpacing: -0.2}
                             anchors.verticalCenter: parent.verticalCenter
@@ -172,7 +172,7 @@ ApplicationWindow {
 
                 // Texto de estado
                 Label {
-                    text: root.connectionState === 2 ? "Sin mision activa" : (mapView.drawingMode ? "Dessin de la mission..." : "Aucune zone sélectionnée")
+                    text: root.connectionState === 2 ? "Aucune mission active" : (mapView.drawingMode ? "Dessin de la mission..." : "Aucune zone sélectionnée")
                     color: "#5f6368"
                     anchors.verticalCenter: parent.verticalCenter
                     font { family: "Geist Sans"; pixelSize: 14; letterSpacing: -0.5}
@@ -345,7 +345,7 @@ ApplicationWindow {
                                         RotationAnimation on rotation { loops: Animation.Infinite; from: 0; to: 360; duration: 1000; running: root.connectionState === 1 }
                                     }
                                     Label {
-                                        text: root.connectionState === 2 ? "Conectado" : (root.connectionState === 1 ? "Conectando..." : "Desconectado")
+                                        text: root.connectionState === 2 ? "Connecté" : (root.connectionState === 1 ? "En cours..." : "Déconnecté")
                                         font.pixelSize: 14
                                         font.bold: true
                                         color: "#070B0F"
@@ -379,7 +379,7 @@ ApplicationWindow {
                                             layer.effect: MultiEffect { colorization: 1.0; colorizationColor: "#000000" }
                                         }
                                         Label {
-                                            text: root.connectionState === 2 ? "Desconectar" : "Conectar"
+                                            text: root.connectionState === 2 ? "Déconnecter" : "Connecter"
                                             font.pixelSize: 12
                                             color: root.connectionState === 1 ? "#a0aec0" : "#070B0F"
                                             anchors.verticalCenter: parent.verticalCenter
@@ -426,7 +426,7 @@ ApplicationWindow {
                                 // Inactivo
                                 Rectangle {
                                     Layout.fillWidth: true; height: 32; color: "#f1f5f9"; radius: 6; border.color: "#cbd5e1"; border.width: 1
-                                    Label { anchors.centerIn: parent; text: "INACTIVO"; color: "#64748b"; font.bold: true; font.pixelSize: 13 }
+                                    Label { anchors.centerIn: parent; text: "INACTIVE"; color: "#64748b"; font.bold: true; font.pixelSize: 13 }
                                 }
 
                                 // Bateria & Senal
@@ -440,7 +440,7 @@ ApplicationWindow {
                                             Row {
                                                 spacing: 6
                                                 Text { text: "🔋"; font.pixelSize: 14 }
-                                                Label { text: "Bateria"; color: "#64748b"; font.pixelSize: 13 }
+                                                Label { text: "Batterie"; color: "#64748b"; font.pixelSize: 13 }
                                             }
                                             Label { text: "84.97"; color: "#00a651"; font.pixelSize: 20; font.bold: true; font.family: "Geist Mono" }
                                         }
@@ -452,7 +452,7 @@ ApplicationWindow {
                                             Row {
                                                 spacing: 6
                                                 Text { text: "📶"; font.pixelSize: 14 }
-                                                Label { text: "Senal"; color: "#64748b"; font.pixelSize: 13 }
+                                                Label { text: "Signal"; color: "#64748b"; font.pixelSize: 13 }
                                             }
                                             Label { text: "90.42"; color: "#000000"; font.pixelSize: 20; font.bold: true; font.family: "Geist Mono" }
                                         }
@@ -480,7 +480,7 @@ ApplicationWindow {
                                                 sourceSize: Qt.size(16,16)
                                                 layer.enabled: true; layer.effect: MultiEffect { colorization: 1.0; colorizationColor: "#00a651" }
                                             }
-                                            Label { text: "GPS del Drone"; font.bold: true; font.pixelSize: 14; Layout.fillWidth: true }
+                                            Label { text: "GPS du drone"; font.bold: true; font.pixelSize: 14; Layout.fillWidth: true }
                                             Text { text: "🛰"; font.pixelSize: 14; opacity: 0.6 }
                                             Label { text: "13 sats"; color: "#64748b"; font.pixelSize: 13 }
                                         }
@@ -506,7 +506,7 @@ ApplicationWindow {
                                                 Layout.fillWidth: true
                                                 Text { text: "◬"; font.pixelSize: 16; color: "#64748b"; anchors.horizontalCenter: parent.horizontalCenter }
                                                 Label { text: "0.0m"; font.bold: true; font.pixelSize: 16; anchors.horizontalCenter: parent.horizontalCenter }
-                                                Label { text: "Altitud"; color: "#64748b"; font.pixelSize: 12; anchors.horizontalCenter: parent.horizontalCenter }
+                                                Label { text: "Altitude"; color: "#64748b"; font.pixelSize: 12; anchors.horizontalCenter: parent.horizontalCenter }
                                             }
                                             Column {
                                                 Layout.fillWidth: true
@@ -522,11 +522,11 @@ ApplicationWindow {
                                             }
                                         }
 
-                                        Label { Layout.alignment: Qt.AlignHCenter; text: "Precision: ±3.9m"; color: "#64748b"; font.pixelSize: 12 }
+                                        Label { Layout.alignment: Qt.AlignHCenter; text: "Précision: ±3.9m"; color: "#64748b"; font.pixelSize: 12 }
                                     }
                                 }
 
-                                Label { Layout.alignment: Qt.AlignHCenter; text: "Actualizado: 11:56:26 p.m."; color: "#64748b"; font.pixelSize: 12 }
+                                Label { Layout.alignment: Qt.AlignHCenter; text: "Mis à jour : 23h56"; color: "#64748b"; font.pixelSize: 12 }
                             }
                         }
                     }
@@ -535,7 +535,7 @@ ApplicationWindow {
 
                     // --- SECCIÓN MODO DE DIBUJO ---
                     Label {
-                        text: "MODO DE DIBUJO"
+                        text: "MODE DESSIN"
                         font.pixelSize: 12
                         font.bold: true
                         font.capitalization: Font.AllUppercase
@@ -575,7 +575,7 @@ ApplicationWindow {
                                     }
                                 }
                                 Label {
-                                    text: "Mision"
+                                    text: "Mission"
                                     font.pixelSize: 15
                                     font.weight: Font.Medium
                                     color: misionBtn.active ? "white" : "#4a5568"
@@ -620,7 +620,7 @@ ApplicationWindow {
                                     }
                                 }
                                 Label {
-                                    text: "Restriccion"
+                                    text: "Restriction"
                                     font.pixelSize: 15
                                     font.weight: Font.Medium
                                     color: restriccionBtn.active ? "white" : "#4a5568"
@@ -643,7 +643,7 @@ ApplicationWindow {
                         RowLayout {
                             width: parent.width
                             Label {
-                                text: "MISION DE VUELO"
+                                text: "Mission de vol"
                                 font.pixelSize: 12; font.bold: true; font.capitalization: Font.AllUppercase; color: "#5f6368"
                                 Layout.fillWidth: true
                             }
@@ -721,11 +721,11 @@ ApplicationWindow {
                                     opacity: 0.5
                                 }
                                 Label {
-                                    text: "Sin mision"; font.pixelSize: 16; font.bold: true; color: "#4a5568"
+                                    text: "Sans mision"; font.pixelSize: 16; font.bold: true; color: "#4a5568"
                                     anchors.horizontalCenter: parent.horizontalCenter
                                 }
                                 Label {
-                                    text: "Crea una para empezar"; font.pixelSize: 13; color: "#94a3b8"
+                                    text: "Crée-en une pour commencer"; font.pixelSize: 13; color: "#94a3b8"
                                     anchors.horizontalCenter: parent.horizontalCenter
                                 }
                             }
@@ -756,7 +756,7 @@ ApplicationWindow {
                                         width: 12; height: 12; radius: 6; color: "#00a651"
                                     }
                                     Label {
-                                        text: "Mision Principal"
+                                        text: "Mission Principale"
                                         font.pixelSize: 15; font.bold: true; color: "#070B0F"
                                     }
                                     Item { Layout.fillWidth: true }
@@ -764,20 +764,20 @@ ApplicationWindow {
                                         width: 80; height: 24; radius: 6; color: "#e8f0fe"
                                         Label {
                                             anchors.centerIn: parent
-                                            text: "Planificando"; font.pixelSize: 11; color: "#4a5568"
+                                            text: "En cours..."; font.pixelSize: 11; color: "#4a5568"
                                         }
                                     }
                                 }
 
                                 Label {
-                                    text: mapView.vertices.length + " vertices  -  0 waypoints"
+                                    text: mapView.vertices.length + " Sommets  -  0 waypoints"
                                     font.pixelSize: 13; color: "#5f6368"
                                 }
 
                                 Rectangle { width: parent.width; height: 1; color: "#edf2f7" }
 
                                 Label {
-                                    text: "Vertices del area (" + mapView.vertices.length + ")"
+                                    text: "Sommets de la zone (" + mapView.vertices.length + ")"
                                     font.pixelSize: 13; font.bold: true; color: "#5f6368"
                                 }
 
@@ -813,7 +813,7 @@ ApplicationWindow {
                                         contentItem: RowLayout {
                                             anchors.centerIn: parent; spacing: 8
                                             Label { text: "⚏"; color: "white"; font.pixelSize: 18 } // Placeholder icon
-                                            Label { text: "Generar ruta"; color: "white"; font.bold: true; font.pixelSize: 15 }
+                                            Label { text: "Générer l'itinéraire"; color: "white"; font.bold: true; font.pixelSize: 15 }
                                         }
                                         onClicked: {
                                             mapView.startProcessing()
@@ -836,7 +836,7 @@ ApplicationWindow {
                                             contentItem: RowLayout {
                                                 anchors.centerIn: parent; spacing: 8
                                                 Label { text: "↧"; color: exportMisionBtn.enabled ? "#4a5568" : "#94a3b8"; font.pixelSize: 18; font.bold: true }
-                                                Label { text: "Exportar"; font.bold: true; color: exportMisionBtn.enabled ? "#4a5568" : "#94a3b8"; font.pixelSize: 15 }
+                                                Label { text: "Exporter"; font.bold: true; color: exportMisionBtn.enabled ? "#4a5568" : "#94a3b8"; font.pixelSize: 15 }
                                             }
                                         }
                                         Button {
@@ -865,7 +865,7 @@ ApplicationWindow {
                         RowLayout {
                             width: parent.width
                             Label {
-                                text: "ZONAS DE RESTRICCION"
+                                text: "ZONES DE RESTRICTIONS"
                                 font.pixelSize: 12
                                 font.bold: true
                                 font.capitalization: Font.AllUppercase
@@ -883,7 +883,7 @@ ApplicationWindow {
                                 contentItem: RowLayout {
                                     anchors.centerIn: parent; spacing: 4
                                     Label { text: "+"; color: "#1a2744"; font.pixelSize: 16 }
-                                    Label { text: "Agregar"; color: "#1a2744"; font.pixelSize: 13; font.bold: true }
+                                    Label { text: "Ajouter"; color: "#1a2744"; font.pixelSize: 13; font.bold: true }
                                 }
                                 onClicked: {
                                     mapView.finalizeCurrentRestriction()
@@ -964,7 +964,7 @@ ApplicationWindow {
                                     opacity: 0.5
                                 }
                                 Label {
-                                    text: "Sin zonas de restriccion"; font.pixelSize: 15; font.bold: true; color: "#4a5568"
+                                    text: "Aucune zone de restriction"; font.pixelSize: 15; font.bold: true; color: "#4a5568"
                                     anchors.horizontalCenter: parent.horizontalCenter
                                 }
                             }
@@ -1129,7 +1129,7 @@ ApplicationWindow {
                         visible: mapView.vertices.length > 0 || mapView.restrictionZones.length > 0
 
                         Label {
-                            text: "ESTADISTICAS"
+                            text: "STATISTIQUES"
                             font.pixelSize: 12
                             font.bold: true
                             font.capitalization: Font.AllUppercase
@@ -1152,7 +1152,7 @@ ApplicationWindow {
                                     Row {
                                         spacing: 6; anchors.horizontalCenter: parent.horizontalCenter
                                         Label { text: "⚑"; color: "#5f6368"; font.pixelSize: 13 }
-                                        Label { text: "Area"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase }
+                                        Label { text: "ZONE"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase }
                                     }
                                     Label {
                                         text: {
@@ -1176,7 +1176,7 @@ ApplicationWindow {
                                     Row {
                                         spacing: 6; anchors.horizontalCenter: parent.horizontalCenter
                                         Label { text: "📏"; color: "#5f6368"; font.pixelSize: 13 }
-                                        Label { text: "Perimetro"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase }
+                                        Label { text: "Périmètre"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase }
                                     }
                                     Label {
                                         text: {
@@ -1200,7 +1200,7 @@ ApplicationWindow {
                                     Row {
                                         spacing: 6; anchors.horizontalCenter: parent.horizontalCenter
                                         Label { text: "☍"; color: "#5f6368"; font.pixelSize: 13 }
-                                        Label { text: "Distancia"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase }
+                                        Label { text: "Distance"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase }
                                     }
                                     Label {
                                         text: "0 m"
@@ -1221,7 +1221,7 @@ ApplicationWindow {
                                     Row {
                                         spacing: 6; anchors.horizontalCenter: parent.horizontalCenter
                                         Label { text: "⏱"; color: "#5f6368"; font.pixelSize: 13 }
-                                        Label { text: "Tiempo Est."; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase }
+                                        Label { text: "Temps Est."; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase }
                                     }
                                     Label {
                                         text: "0 min"
