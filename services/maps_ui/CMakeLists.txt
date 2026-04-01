@@ -39,6 +39,8 @@ qt_add_qml_module(app_maps_ui
         assets/icons/ruler_icon.svg
         assets/icons/share_icon.svg
         assets/icons/grid_icon.svg
+        assets/icons/lock_icon.svg
+        assets/icons/drone_icon.svg
     RESOURCES
         assets/fonts/Geist-Regular.ttf
         assets/fonts/Geist-Medium.ttf

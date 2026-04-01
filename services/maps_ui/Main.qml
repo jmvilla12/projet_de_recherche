@@ -800,7 +800,7 @@ ApplicationWindow {
                             Column {
                                 anchors.centerIn: parent; spacing: 10
                                 Image {
-                                    source: "/qt/qml/projet_de_recherche/assets/icons/sin_mision.png"
+                                    source: "/qt/qml/projet_de_recherche/assets/icons/drone_icon.svg"
                                     sourceSize: Qt.size(48, 48)
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     opacity: 0.5
@@ -1173,7 +1173,7 @@ ApplicationWindow {
                             Column {
                                 anchors.centerIn: parent; spacing: 10
                                 Image {
-                                    source: "/qt/qml/projet_de_recherche/assets/icons/sin_restriccion.png"
+                                    source: "/qt/qml/projet_de_recherche/assets/icons/lock_icon.svg"
                                     sourceSize: Qt.size(40, 40)
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     opacity: 0.5
