@@ -25,6 +25,20 @@ qt_add_qml_module(app_maps_ui
         assets/icons/restric_icon.svg
         assets/icons/sin_mision.png
         assets/icons/sin_restriccion.png
+        assets/icons/icon_battery.svg
+        assets/icons/cell5_bar.svg
+        assets/icons/satellite_icon.svg
+        assets/icons/location_icon.svg
+        assets/icons/power_off_icon.svg
+        assets/icons/globe_icon.svg
+        assets/icons/delete_icon.svg
+        assets/icons/delete_icon_white.svg
+        assets/icons/area_icon.svg
+        assets/icons/path_icon.svg
+        assets/icons/time_icon.svg
+        assets/icons/ruler_icon.svg
+        assets/icons/share_icon.svg
+        assets/icons/grid_icon.svg
     RESOURCES
         assets/fonts/Geist-Regular.ttf
         assets/fonts/Geist-Medium.ttf

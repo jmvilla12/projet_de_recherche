@@ -14,7 +14,7 @@ ApplicationWindow {
     visible: true
     title: "IMT - Drone Path Planner"
 
-    // --- STATE ---
+    // --- Estado ---
     property int connectionState: 0 // 0: Déconnecté, 1: En train de connecter, 2: Connecté
     Timer {
         id: connectionTimer
@@ -90,7 +90,7 @@ ApplicationWindow {
                         anchors.centerIn: parent
                         spacing: 8
                         Image {
-                            source: "/qt/qml/projet_de_recherche/assets/icons/Location_Searching.svg"
+                            source: "/qt/qml/projet_de_recherche/assets/icons/globe_icon.svg"
                             sourceSize: Qt.size(14, 14)
                             anchors.verticalCenter: parent.verticalCenter
                             layer.enabled: true
@@ -107,7 +107,7 @@ ApplicationWindow {
 
                 // Pill Connection Status
                 Rectangle {
-                    width: connRow.width + 24
+                    width: connRow.width + 20
                     height: 28
                     color: root.connectionState === 2 ? "#e6f4ea" : (root.connectionState === 1 ? "#fff3e0" : "#E6ECF1")
                     radius: 14
@@ -146,7 +146,7 @@ ApplicationWindow {
                             width: 60; height: 18; color: "#cbd5e1"; radius: 4
                             anchors.verticalCenter: parent.verticalCenter
                             Text {
-                                anchors.centerIn: parent; text: "Inactivo"; color: "#4a5568"
+                                anchors.centerIn: parent; text: "Inactif"; color: "#4a5568"
                                 font { family: "Geist Sans"; pixelSize: 10 }
                             }
                         }
@@ -155,11 +155,22 @@ ApplicationWindow {
                             visible: root.connectionState === 2
                             spacing: 4
                             anchors.verticalCenter: parent.verticalCenter
-                            Text {
-                                text: "🔋"
-                                font.pixelSize: 12
+
+                            Image {
+                                source: "/qt/qml/projet_de_recherche/assets/icons/icon_battery.svg" // O la ruta correspondiente
+                                width: 14
+                                height: 14
+                                sourceSize: Qt.size(14, 14)
                                 anchors.verticalCenter: parent.verticalCenter
+
+                                // Si quieres que el icono sea verde como el texto "85%"
+                                layer.enabled: true
+                                layer.effect: MultiEffect {
+                                    colorization: 1.0
+                                    colorizationColor: "#00a651"
+                                }
                             }
+
                             Text {
                                 text: "85%"
                                 color: "#00a651"
@@ -177,15 +188,6 @@ ApplicationWindow {
                     anchors.verticalCenter: parent.verticalCenter
                     font { family: "Geist Sans"; pixelSize: 14; letterSpacing: -0.5}
                 }
-                
-                // Dark mode Icon
-                Button {
-                    visible: root.connectionState === 2
-                    implicitWidth: 28; implicitHeight: 28; flat: true
-                    anchors.verticalCenter: parent.verticalCenter
-                    background: Rectangle { color: "#f8fafd"; radius: 6; border.color: "#e2e8f0"; border.width: 1 }
-                    contentItem: Text { text: "🌙"; anchors.centerIn: parent; font.pixelSize: 14 }
-                }
 
                 // Icono de información con Hover
                 Label {
@@ -196,7 +198,7 @@ ApplicationWindow {
 
                     HoverHandler { id: infoHover }
 
-                    // Cuadrito (Tooltip) que aparece al pasar el ratón
+                    // Cuadrito (Tooltip) hover
                     Rectangle {
                         visible: infoHover.hovered
                         parent: Overlay.overlay
@@ -269,6 +271,7 @@ ApplicationWindow {
 
                             }
 
+
                         }
 
                         Button {
@@ -306,7 +309,7 @@ ApplicationWindow {
                     Rectangle {
                         id: droneStatusCard
                         width: parent.width
-                        implicitHeight: mainStatusLayout.implicitHeight + 32
+                        implicitHeight: mainStatusLayout.implicitHeight + 24
                         color: "white"
                         radius: 12
                         border.color: "#edf2f7"
@@ -317,7 +320,7 @@ ApplicationWindow {
                             shadowEnabled: true; shadowColor: "#08000000"; shadowBlur: 0.1; shadowVerticalOffset: 2
                         }
 
-                        // Loader-like visibility implementation
+                        // Implementacion de visibilidad
                         ColumnLayout {
                             id: mainStatusLayout
                             anchors.top: parent.top
@@ -371,13 +374,21 @@ ApplicationWindow {
                                     contentItem: Row {
                                         spacing: 6
                                         Image {
-                                            source: "/qt/qml/projet_de_recherche/assets/icons/wifi_off.svg"
+                                            // CAMBIO AQUÍ: Si el estado es 2 (Conectado), muestra bola_off, si no, wifi_off
+                                            source: root.connectionState === 2
+                                                    ? "/qt/qml/projet_de_recherche/assets/icons/power_off_icon.svg"
+                                                    : "/qt/qml/projet_de_recherche/assets/icons/wifi_off.svg"
+
                                             sourceSize: Qt.size(14, 14)
                                             opacity: root.connectionState === 1 ? 0.4 : 0.8
                                             anchors.verticalCenter: parent.verticalCenter
                                             layer.enabled: true
-                                            layer.effect: MultiEffect { colorization: 1.0; colorizationColor: "#000000" }
+                                            layer.effect: MultiEffect {
+                                                colorization: 1.0;
+                                                colorizationColor: "#000000"
+                                            }
                                         }
+
                                         Label {
                                             text: root.connectionState === 2 ? "Déconnecter" : "Connecter"
                                             font.pixelSize: 12
@@ -385,6 +396,7 @@ ApplicationWindow {
                                             anchors.verticalCenter: parent.verticalCenter
                                         }
                                     }
+
                                     onClicked: {
                                         if (root.connectionState === 0) {
                                             root.connectionState = 1;
@@ -426,7 +438,7 @@ ApplicationWindow {
                                 // Inactivo
                                 Rectangle {
                                     Layout.fillWidth: true; height: 32; color: "#f1f5f9"; radius: 6; border.color: "#cbd5e1"; border.width: 1
-                                    Label { anchors.centerIn: parent; text: "INACTIVE"; color: "#64748b"; font.bold: true; font.pixelSize: 13 }
+                                    Label { anchors.centerIn: parent; text: "INACTIF"; color: "#64748b"; font.bold: true; font.pixelSize: 13 }
                                 }
 
                                 // Bateria & Senal
@@ -434,27 +446,91 @@ ApplicationWindow {
                                     Layout.fillWidth: true; spacing: 12
 
                                     Rectangle {
-                                        Layout.fillWidth: true; height: 75; color: "#f8fafc"; radius: 8
+                                        Layout.fillWidth: true
+                                        height: 75
+                                        color: "#f8fafc"
+                                        radius: 8
+
                                         Column {
-                                            anchors.fill: parent; anchors.margins: 12; spacing: 4
+                                            anchors.fill: parent
+                                            anchors.margins: 12
+                                            spacing: 4
+
+                                            // Contenedor horizontal para Icono + Texto
                                             Row {
                                                 spacing: 6
-                                                Text { text: "🔋"; font.pixelSize: 14 }
-                                                Label { text: "Batterie"; color: "#64748b"; font.pixelSize: 13 }
+                                                height: 16 // Fijamos la altura de la fila para que el centrado sea preciso
+
+                                                Image {
+                                                    source: "/qt/qml/projet_de_recherche/assets/icons/icon_battery.svg"
+                                                    width: 16
+                                                    height: 16
+                                                    sourceSize.width: 16
+                                                    sourceSize.height: 16
+                                                    fillMode: Image.PreserveAspectFit
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                }
+
+                                                Label {
+                                                    text: "Batterie"
+                                                    color: "#64748b"
+                                                    font.pixelSize: 13
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                }
                                             }
-                                            Label { text: "84.97"; color: "#00a651"; font.pixelSize: 20; font.bold: true; font.family: "Geist Mono" }
+
+                                            // Porcentaje de batería
+                                            Label {
+                                                text: "84.97%"
+                                                color: "#00a651"
+                                                font.pixelSize: 20
+                                                font.bold: true
+                                                font.family: "Geist Mono"
+                                            }
                                         }
                                     }
                                     Rectangle {
-                                        Layout.fillWidth: true; height: 75; color: "#f8fafc"; radius: 8
+                                        Layout.fillWidth: true
+                                        height: 75
+                                        color: "#f8fafc"
+                                        radius: 8
+
                                         Column {
-                                            anchors.fill: parent; anchors.margins: 12; spacing: 4
+                                            anchors.fill: parent
+                                            anchors.margins: 12
+                                            spacing: 4
+
                                             Row {
                                                 spacing: 6
-                                                Text { text: "📶"; font.pixelSize: 14 }
-                                                Label { text: "Signal"; color: "#64748b"; font.pixelSize: 13 }
+                                                height: 16 // Altura de referencia para el alineado vertical
+
+                                                Image {
+                                                    source: "/qt/qml/projet_de_recherche/assets/icons/cell5_bar.svg"
+                                                    width: 16
+                                                    height: 16
+                                                    sourceSize.width: 16
+                                                    sourceSize.height: 16
+                                                    fillMode: Image.PreserveAspectFit
+                                                    // Centrado vertical corregido
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                }
+
+                                                Label {
+                                                    text: "Signal"
+                                                    color: "#64748b"
+                                                    font.pixelSize: 13
+                                                    // Centrado vertical corregido
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                }
                                             }
-                                            Label { text: "90.42"; color: "#000000"; font.pixelSize: 20; font.bold: true; font.family: "Geist Mono" }
+
+                                            Label {
+                                                text: "90.42"
+                                                color: "#000000"
+                                                font.pixelSize: 20
+                                                font.bold: true
+                                                font.family: "Geist Mono"
+                                            }
                                         }
                                     }
                                 }
@@ -475,14 +551,45 @@ ApplicationWindow {
 
                                         RowLayout {
                                             Layout.fillWidth: true
+                                            spacing: 8 // Un poco más de espacio queda mejor en RowLayout
+
+                                            // Icono principal (Búsqueda)
                                             Image {
-                                                source: "/qt/qml/projet_de_recherche/assets/icons/Location_Searching.svg"
-                                                sourceSize: Qt.size(16,16)
-                                                layer.enabled: true; layer.effect: MultiEffect { colorization: 1.0; colorizationColor: "#00a651" }
+                                                source: "/qt/qml/projet_de_recherche/assets/icons/location_icon.svg"
+                                                sourceSize: Qt.size(16, 16)
+                                                Layout.alignment: Qt.AlignVCenter
+                                                layer.enabled: true
+                                                        layer.effect: MultiEffect {
+                                                            colorization: 1.0;
+                                                            colorizationColor: "#64748b" // Mismo verde que el otro icono
+                                                        }
                                             }
-                                            Label { text: "GPS du drone"; font.bold: true; font.pixelSize: 14; Layout.fillWidth: true }
-                                            Text { text: "🛰"; font.pixelSize: 14; opacity: 0.6 }
-                                            Label { text: "13 sats"; color: "#64748b"; font.pixelSize: 13 }
+
+                                            Label {
+                                                text: "GPS du drone"
+                                                font.bold: true
+                                                font.pixelSize: 14
+                                                Layout.fillWidth: true
+                                                Layout.alignment: Qt.AlignVCenter
+                                            }
+
+                                            // Nuevo Icono de Satélite sustituyendo al emoji
+                                            Image {
+                                                source: "/qt/qml/projet_de_recherche/assets/icons/satellite_icon.svg" // Asegúrate de que la ruta sea correcta
+                                                width: 16
+                                                height: 16
+                                                sourceSize: Qt.size(16, 16)
+                                                opacity: 0.6
+                                                Layout.alignment: Qt.AlignVCenter
+                                                // Si quieres que también sea verde, puedes copiar el layer.effect aquí
+                                            }
+
+                                            Label {
+                                                text: "13 sats"
+                                                color: "#64748b"
+                                                font.pixelSize: 13
+                                                Layout.alignment: Qt.AlignVCenter
+                                            }
                                         }
 
                                         RowLayout {
@@ -497,28 +604,6 @@ ApplicationWindow {
                                                 spacing: 4
                                                 Label { text: "19.43"; font.family: "Geist Mono"; font.pixelSize: 14; horizontalAlignment: Text.AlignRight }
                                                 Label { text: "-99.13"; font.family: "Geist Mono"; font.pixelSize: 14; horizontalAlignment: Text.AlignRight }
-                                            }
-                                        }
-
-                                        RowLayout {
-                                            Layout.fillWidth: true
-                                            Column {
-                                                Layout.fillWidth: true
-                                                Text { text: "◬"; font.pixelSize: 16; color: "#64748b"; anchors.horizontalCenter: parent.horizontalCenter }
-                                                Label { text: "0.0m"; font.bold: true; font.pixelSize: 16; anchors.horizontalCenter: parent.horizontalCenter }
-                                                Label { text: "Altitude"; color: "#64748b"; font.pixelSize: 12; anchors.horizontalCenter: parent.horizontalCenter }
-                                            }
-                                            Column {
-                                                Layout.fillWidth: true
-                                                Text { text: "⏱"; font.pixelSize: 16; color: "#64748b"; anchors.horizontalCenter: parent.horizontalCenter }
-                                                Label { text: "0.0"; font.bold: true; font.pixelSize: 16; anchors.horizontalCenter: parent.horizontalCenter }
-                                                Label { text: "m/s"; color: "#64748b"; font.pixelSize: 12; anchors.horizontalCenter: parent.horizontalCenter }
-                                            }
-                                            Column {
-                                                Layout.fillWidth: true
-                                                Text { text: "🧭"; font.pixelSize: 16; color: "#64748b"; anchors.horizontalCenter: parent.horizontalCenter }
-                                                Label { text: "174°"; font.bold: true; font.pixelSize: 16; anchors.horizontalCenter: parent.horizontalCenter }
-                                                Label { text: "Heading"; color: "#64748b"; font.pixelSize: 12; anchors.horizontalCenter: parent.horizontalCenter }
                                             }
                                         }
 
@@ -793,8 +878,36 @@ ApplicationWindow {
                                             }
                                             Label { Layout.fillWidth: true; text: model.lat.toFixed(5) + ", " + model.lng.toFixed(5); font.pixelSize: 11; color: "#4a5568"; font.family: "Geist Mono" }
                                             Button {
-                                                implicitWidth: 24; implicitHeight: 24; flat: true
-                                                contentItem: Label { text: "🗑"; color: "#a0aec0"; font.pixelSize: 14; horizontalAlignment: Text.AlignHCenter }
+                                                id: deleteBtn
+                                                implicitWidth: 24
+                                                implicitHeight: 24
+                                                flat: true
+
+                                                background: Rectangle {
+                                                        color: deleteBtn.hovered ? "#f1f5f9" : "transparent" // Fondo sutil al hacer hover
+                                                        radius: 6 // Ajusta este valor para redondear más o menos
+                                                        border.color: deleteBtn.hovered ? "#e2e8f0" : "transparent"
+                                                        border.width: 1
+                                                    }
+
+                                                contentItem: Image {
+                                                    source: "/qt/qml/projet_de_recherche/assets/icons/delete_icon.svg" // O la ruta completa a tus assets
+                                                    sourceSize: Qt.size(16, 16) // Un poco más pequeño que el botón para dejar margen
+                                                    fillMode: Image.PreserveAspectFit
+                                                    horizontalAlignment: Image.AlignHCenter
+                                                    verticalAlignment: Image.AlignVCenter
+
+                                                    // Aplicamos el color gris (#a0aec0) que tenía el texto original
+                                                    layer.enabled: true
+                                                    layer.effect: MultiEffect {
+                                                        colorization: 1.0
+                                                        colorizationColor: "#a0aec0"
+                                                    }
+
+                                                    // Opcional: que cambie a un gris más oscuro al pasar el ratón
+                                                    opacity: deleteBtn.hovered ? 1.0 : 0.7
+                                                }
+
                                                 onClicked: mapView.removeMainPoint(index)
                                             }
                                         }
@@ -809,12 +922,40 @@ ApplicationWindow {
                                         id: generarRutaBtn
                                         width: parent.width
                                         implicitHeight: 44
-                                        background: Rectangle { radius: 8; color: "#00a651" }
-                                        contentItem: RowLayout {
-                                            anchors.centerIn: parent; spacing: 8
-                                            Label { text: "⚏"; color: "white"; font.pixelSize: 18 } // Placeholder icon
-                                            Label { text: "Générer l'itinéraire"; color: "white"; font.bold: true; font.pixelSize: 15 }
+
+                                        background: Rectangle {
+                                            radius: 8
+                                            color: generarRutaBtn.pressed ? "#008a44" : "#00a651" // Efecto de oscurecer al presionar
                                         }
+
+                                        contentItem: RowLayout {
+                                            spacing: 8
+
+                                            Image {
+                                                source: "/qt/qml/projet_de_recherche/assets/icons/grid_icon.svg" // Ajusta la ruta si es necesario
+                                                Layout.preferredWidth: 18
+                                                Layout.preferredHeight: 18
+                                                sourceSize: Qt.size(18, 18)
+                                                fillMode: Image.PreserveAspectFit
+                                                Layout.alignment: Qt.AlignVCenter
+
+                                                // Forzamos el icono a color blanco
+                                                layer.enabled: true
+                                                layer.effect: MultiEffect {
+                                                    colorization: 1.0
+                                                    colorizationColor: "#ffffff"
+                                                }
+                                            }
+
+                                            Label {
+                                                text: "Générer l'itinéraire"
+                                                color: "white"
+                                                font.bold: true
+                                                font.pixelSize: 15
+                                                Layout.alignment: Qt.AlignVCenter
+                                            }
+                                        }
+
                                         onClicked: {
                                             mapView.startProcessing()
                                             // Activar exportar al dar generar ruta (mock)
@@ -830,19 +971,93 @@ ApplicationWindow {
                                             Layout.fillWidth: true
                                             implicitHeight: 44
                                             enabled: false // Se habilita con Generar ruta
+
                                             background: Rectangle {
-                                                radius: 8; color: "white"; border.color: exportMisionBtn.enabled ? "#e2e8f0" : "#f1f5f9"
+                                                radius: 8
+                                                color: "white"
+                                                border.color: exportMisionBtn.enabled ? "#e2e8f0" : "#f1f5f9"
+                                                border.width: 1
                                             }
+
                                             contentItem: RowLayout {
-                                                anchors.centerIn: parent; spacing: 8
-                                                Label { text: "↧"; color: exportMisionBtn.enabled ? "#4a5568" : "#94a3b8"; font.pixelSize: 18; font.bold: true }
-                                                Label { text: "Exporter"; font.bold: true; color: exportMisionBtn.enabled ? "#4a5568" : "#94a3b8"; font.pixelSize: 15 }
+                                                spacing: 8
+
+                                                Image {
+                                                    source: "/qt/qml/projet_de_recherche/assets/icons/share_icon.svg"
+                                                    Layout.preferredWidth: 18
+                                                    Layout.preferredHeight: 18
+                                                    sourceSize: Qt.size(18, 18)
+                                                    fillMode: Image.PreserveAspectFit
+                                                    Layout.alignment: Qt.AlignVCenter
+
+                                                    layer.enabled: true
+                                                    layer.effect: MultiEffect {
+                                                        colorization: 1.0
+                                                        // El icono cambia de color según si el botón está habilitado o no
+                                                        colorizationColor: exportMisionBtn.enabled ? "#4a5568" : "#94a3b8"
+                                                    }
+                                                }
+
+                                                Label {
+                                                    text: "Exporter"
+                                                    font.bold: true
+                                                    font.pixelSize: 15
+                                                    color: exportMisionBtn.enabled ? "#4a5568" : "#94a3b8"
+                                                    Layout.alignment: Qt.AlignVCenter
+                                                }
                                             }
                                         }
                                         Button {
-                                            implicitWidth: 44; implicitHeight: 44
-                                            background: Rectangle { radius: 8; color: "#d32f2f" }
-                                            contentItem: Label { text: "🗑"; color: "white"; font.pixelSize: 16; anchors.centerIn: parent }
+                                            id: clearMissionBtn
+                                            implicitWidth: 36
+                                            implicitHeight: 36
+
+                                            background: Rectangle {
+                                                radius: 8
+                                                color: clearMissionBtn.pressed ? "#b71c1c" : "#d32f2f" // Un rojo más oscuro al presionar
+                                            }
+
+                                            Button {
+                                                implicitWidth: 44
+                                                implicitHeight: 44
+
+                                                background: Rectangle {
+                                                    radius: 8
+                                                    color: clearMissionBtn.pressed ? "#b71c1c" : "#d32f2f"
+                                                }
+
+                                                contentItem: Item {
+                                                    // Este contenedor ocupa los 44x44 y nos permite centrar la imagen pequeña dentro
+                                                    anchors.fill: parent
+
+                                                    Image {
+                                                        source: "/qt/qml/projet_de_recherche/assets/icons/delete_icon_white.svg"
+
+                                                        // Fuerza el tamaño visual aquí (ajusta 16 a lo que prefieras)
+                                                        width: 16
+                                                        height: 16
+
+                                                        // Renderiza el SVG a este tamaño exacto para que no se vea borroso
+                                                        sourceSize: Qt.size(width, height)
+
+                                                        fillMode: Image.PreserveAspectFit
+                                                        anchors.centerIn: parent // Lo centra perfectamente en el botón
+
+                                                        layer.enabled: true
+                                                        layer.effect: MultiEffect {
+                                                            colorization: 1.0
+                                                            colorizationColor: "#ffffff"
+                                                        }
+                                                    }
+                                                }
+                                                onClicked: {
+                                                    mapView.vertices = []
+                                                    mapView.vertexModel.clear()
+                                                    mapView.updatePolygonPaths()
+                                                    exportMisionBtn.enabled = false
+                                                }
+                                            }
+
                                             onClicked: {
                                                 mapView.vertices = []
                                                 mapView.vertexModel.clear()
@@ -1067,8 +1282,29 @@ ApplicationWindow {
                                                             }
                                                             Label { Layout.fillWidth: true; text: modelData.latitude.toFixed(5) + ", " + modelData.longitude.toFixed(5); font.pixelSize: 11; color: "#4a5568"; font.family: "Geist Mono" }
                                                             Button {
-                                                                implicitWidth: 24; implicitHeight: 24; flat: true
-                                                                contentItem: Label { text: "🗑"; color: "#5f6368"; font.pixelSize: 14; horizontalAlignment: Text.AlignHCenter }
+                                                                implicitWidth: 24
+                                                                implicitHeight: 24
+                                                                flat: true
+
+                                                                contentItem: Item {
+                                                                    anchors.fill: parent
+
+                                                                    Image {
+                                                                        source: "/qt/qml/projet_de_recherche/assets/icons/delete_icon.svg" // O la ruta de tu icono
+                                                                        width: 14
+                                                                        height: 14
+                                                                        sourceSize: Qt.size(width, height)
+                                                                        fillMode: Image.PreserveAspectFit
+                                                                        anchors.centerIn: parent
+
+                                                                        layer.enabled: true
+                                                                        layer.effect: MultiEffect {
+                                                                            colorization: 1.0
+                                                                            colorizationColor: "#5f6368" // El color gris oscuro original
+                                                                        }
+                                                                    }
+                                                                }
+
                                                                 onClicked: {
                                                                     var zIdx = zoneCard.zoneIndex;
                                                                     if (zoneCard.isCurrent) {
@@ -1093,13 +1329,43 @@ ApplicationWindow {
                                             }
 
                                             Button {
-                                                width: parent.width; implicitHeight: 44
-                                                background: Rectangle { radius: 8; color: "#d32f2f" }
-                                                contentItem: RowLayout {
-                                                    anchors.centerIn: parent; spacing: 8
-                                                    Label { text: "🗑"; color: "white"; font.pixelSize: 16 }
-                                                    Label { text: "Supprimer la zone"; color: "white"; font.bold: true; font.pixelSize: 14 }
+                                                id: deleteZoneBtn
+                                                width: parent.width
+                                                implicitHeight: 44
+
+                                                background: Rectangle {
+                                                    radius: 8
+                                                    color: deleteZoneBtn.pressed ? "#b71c1c" : "#d32f2f"
                                                 }
+
+                                                contentItem: RowLayout {
+                                                    spacing: 8
+                                                    // Esto centra el contenido (icono + texto) dentro del botón
+
+                                                    Image {
+                                                        source: "/qt/qml/projet_de_recherche/assets/icons/delete_icon_white.svg"
+                                                        // Tamaño pequeño para el icono
+                                                        Layout.preferredWidth: 16
+                                                        Layout.preferredHeight: 16
+                                                        sourceSize: Qt.size(16, 16)
+                                                        fillMode: Image.PreserveAspectFit
+
+                                                        layer.enabled: true
+                                                        layer.effect: MultiEffect {
+                                                            colorization: 1.0
+                                                            colorizationColor: "#ffffff"
+                                                        }
+                                                    }
+
+                                                    Label {
+                                                        text: "Supprimer la zone"
+                                                        color: "white"
+                                                        font.bold: true
+                                                        font.pixelSize: 14
+                                                        Layout.alignment: Qt.AlignVCenter
+                                                    }
+                                                }
+
                                                 onClicked: {
                                                     var zIdx = zoneCard.zoneIndex;
                                                     if (zoneCard.isCurrent) {
@@ -1142,7 +1408,7 @@ ApplicationWindow {
                             columnSpacing: 10
                             rowSpacing: 10
 
-                            // Area
+                            // --- AREA ---
                             Rectangle {
                                 Layout.fillWidth: true; Layout.preferredHeight: 84
                                 color: "#f8fafd"; radius: 12; border.color: "#e2e8f0"; border.width: 1
@@ -1151,7 +1417,14 @@ ApplicationWindow {
                                     spacing: 6
                                     Row {
                                         spacing: 6; anchors.horizontalCenter: parent.horizontalCenter
-                                        Label { text: "⚑"; color: "#5f6368"; font.pixelSize: 13 }
+                                        Image {
+                                            source: "/qt/qml/projet_de_recherche/assets/icons/area_icon.svg"
+                                            width: 14; height: 14
+                                            sourceSize: Qt.size(14, 14)
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            layer.enabled: true
+                                            layer.effect: MultiEffect { colorization: 1.0; colorizationColor: "#5f6368" }
+                                        }
                                         Label { text: "ZONE"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase }
                                     }
                                     Label {
@@ -1160,13 +1433,12 @@ ApplicationWindow {
                                             return a >= 1000000 ? (a/1000000).toFixed(2) + " km²" : (a > 0 ? a.toFixed(2) + " m²" : "0 m²")
                                         }
                                         anchors.horizontalCenter: parent.horizontalCenter
-                                        font.pixelSize: 16; font.bold: true; color: "#1a2744"
-                                        font.family: "Geist Sans"
+                                        font.pixelSize: 16; font.bold: true; color: "#1a2744"; font.family: "Geist Sans"
                                     }
                                 }
                             }
 
-                            // Perimetro
+                            // --- PERIMETRO ---
                             Rectangle {
                                 Layout.fillWidth: true; Layout.preferredHeight: 84
                                 color: "#f8fafd"; radius: 12; border.color: "#e2e8f0"; border.width: 1
@@ -1175,7 +1447,14 @@ ApplicationWindow {
                                     spacing: 6
                                     Row {
                                         spacing: 6; anchors.horizontalCenter: parent.horizontalCenter
-                                        Label { text: "📏"; color: "#5f6368"; font.pixelSize: 13 }
+                                        Image {
+                                            source: "/qt/qml/projet_de_recherche/assets/icons/ruler_icon.svg"
+                                            width: 14; height: 14
+                                            sourceSize: Qt.size(14, 14)
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            layer.enabled: true
+                                            layer.effect: MultiEffect { colorization: 1.0; colorizationColor: "#5f6368" }
+                                        }
                                         Label { text: "Périmètre"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase }
                                     }
                                     Label {
@@ -1184,13 +1463,12 @@ ApplicationWindow {
                                             return p > 1000 ? (p/1000).toFixed(2) + " km" : p.toFixed(2) + " m"
                                         }
                                         anchors.horizontalCenter: parent.horizontalCenter
-                                        font.pixelSize: 16; font.bold: true; color: "#1a2744"
-                                        font.family: "Geist Sans"
+                                        font.pixelSize: 16; font.bold: true; color: "#1a2744"; font.family: "Geist Sans"
                                     }
                                 }
                             }
 
-                            // Distancia de vuelo
+                            // --- DISTANCIA DE VUELO ---
                             Rectangle {
                                 Layout.fillWidth: true; Layout.preferredHeight: 84
                                 color: "#f8fafd"; radius: 12; border.color: "#e2e8f0"; border.width: 1
@@ -1199,19 +1477,25 @@ ApplicationWindow {
                                     spacing: 6
                                     Row {
                                         spacing: 6; anchors.horizontalCenter: parent.horizontalCenter
-                                        Label { text: "☍"; color: "#5f6368"; font.pixelSize: 13 }
+                                        Image {
+                                            source: "/qt/qml/projet_de_recherche/assets/icons/path_icon.svg"
+                                            width: 14; height: 14
+                                            sourceSize: Qt.size(14, 14)
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            layer.enabled: true
+                                            layer.effect: MultiEffect { colorization: 1.0; colorizationColor: "#5f6368" }
+                                        }
                                         Label { text: "Distance"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase }
                                     }
                                     Label {
                                         text: "0 m"
                                         anchors.horizontalCenter: parent.horizontalCenter
-                                        font.pixelSize: 16; font.bold: true; color: "#1a2744"
-                                        font.family: "Geist Sans"
+                                        font.pixelSize: 16; font.bold: true; color: "#1a2744"; font.family: "Geist Sans"
                                     }
                                 }
                             }
 
-                            // Tiempo estimado
+                            // --- TIEMPO ESTIMADO ---
                             Rectangle {
                                 Layout.fillWidth: true; Layout.preferredHeight: 84
                                 color: "#f8fafd"; radius: 12; border.color: "#e2e8f0"; border.width: 1
@@ -1220,14 +1504,20 @@ ApplicationWindow {
                                     spacing: 6
                                     Row {
                                         spacing: 6; anchors.horizontalCenter: parent.horizontalCenter
-                                        Label { text: "⏱"; color: "#5f6368"; font.pixelSize: 13 }
+                                        Image {
+                                            source: "/qt/qml/projet_de_recherche/assets/icons/time_icon.svg"
+                                            width: 14; height: 14
+                                            sourceSize: Qt.size(14, 14)
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            layer.enabled: true
+                                            layer.effect: MultiEffect { colorization: 1.0; colorizationColor: "#5f6368" }
+                                        }
                                         Label { text: "Temps Est."; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase }
                                     }
                                     Label {
                                         text: "0 min"
                                         anchors.horizontalCenter: parent.horizontalCenter
-                                        font.pixelSize: 16; font.bold: true; color: "#1a2744"
-                                        font.family: "Geist Sans"
+                                        font.pixelSize: 16; font.bold: true; color: "#1a2744"; font.family: "Geist Sans"
                                     }
                                 }
                             }
