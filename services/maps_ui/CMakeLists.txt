@@ -42,6 +42,11 @@ qt_add_qml_module(app_maps_ui
         assets/icons/lock_icon.svg
         assets/icons/drone_icon.svg
     RESOURCES
+        assets/fonts/GeistMono-ExtraLight.ttf
+        assets/fonts/GeistMono-Light.ttf
+        assets/fonts/GeistMono-Medium.ttf
+        assets/fonts/GeistMono-Regular.ttf
+        assets/fonts/GeistMono-Thin.ttf
         assets/fonts/Geist-Regular.ttf
         assets/fonts/Geist-Medium.ttf
         assets/fonts/Geist-Bold.ttf

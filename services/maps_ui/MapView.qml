@@ -529,21 +529,6 @@ Item {
             }
         }
 
-        // Subdivisions (Rectangles)
-        MapItemView {
-            model: subdivisionsModel
-            delegate: MapPolygon {
-                path: [
-                    QtPositioning.coordinate(model.lat1, model.lng1),
-                    QtPositioning.coordinate(model.lat1, model.lng2),
-                    QtPositioning.coordinate(model.lat2, model.lng2),
-                    QtPositioning.coordinate(model.lat2, model.lng1)
-                ]
-                color: Qt.rgba(0.1, 0.4, 0.9, 0.1)
-                border.color: "#1a237e"
-                border.width: 1
-            }
-        }
 
         // Internal Points (Small dots)
         MapItemView {
@@ -568,7 +553,6 @@ Item {
                 processTimer.start();
             } else if (root.processingStage === 2) {
                 // REFINED subdivision logic: check all 4 corners
-                subdivisionsModel.clear();
                 if (internalPointsModel.count > 0) {
                     var offset = 0.00045; // Slightly smaller than points spacing to fit
                     for (var i = 0; i < internalPointsModel.count; i += 3) {

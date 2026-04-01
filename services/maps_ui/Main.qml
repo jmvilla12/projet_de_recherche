@@ -141,15 +141,6 @@ ApplicationWindow {
                             anchors.verticalCenter: parent.verticalCenter
                         }
                         
-                        Rectangle {
-                            visible: root.connectionState === 2
-                            width: 60; height: 18; color: "#cbd5e1"; radius: 4
-                            anchors.verticalCenter: parent.verticalCenter
-                            Text {
-                                anchors.centerIn: parent; text: "Inactif"; color: "#4a5568"
-                                font { family: "Geist Sans"; pixelSize: 10 }
-                            }
-                        }
                         
                         Row {
                             visible: root.connectionState === 2
@@ -248,7 +239,7 @@ ApplicationWindow {
 
                 Column {
                     width: parent.width
-                    spacing: 20
+                    spacing: 13
 
 
                     RowLayout {
@@ -306,6 +297,8 @@ ApplicationWindow {
                         }
                     }
 
+                    Rectangle { width: parent.width; height: 1; color: "#dde1ec" }
+
                     Rectangle {
                         id: droneStatusCard
                         width: parent.width
@@ -350,6 +343,7 @@ ApplicationWindow {
                                     Label {
                                         text: root.connectionState === 2 ? "Connecté" : (root.connectionState === 1 ? "En cours..." : "Déconnecté")
                                         font.pixelSize: 14
+                                        font.letterSpacing: -0.5
                                         font.bold: true
                                         color: "#070B0F"
                                         anchors.verticalCenter: parent.verticalCenter
@@ -374,7 +368,6 @@ ApplicationWindow {
                                     contentItem: Row {
                                         spacing: 6
                                         Image {
-                                            // CAMBIO AQUÍ: Si el estado es 2 (Conectado), muestra bola_off, si no, wifi_off
                                             source: root.connectionState === 2
                                                     ? "/qt/qml/projet_de_recherche/assets/icons/power_off_icon.svg"
                                                     : "/qt/qml/projet_de_recherche/assets/icons/wifi_off.svg"
@@ -391,6 +384,7 @@ ApplicationWindow {
 
                                         Label {
                                             text: root.connectionState === 2 ? "Déconnecter" : "Connecter"
+                                            font.letterSpacing: -0.5
                                             font.pixelSize: 12
                                             color: root.connectionState === 1 ? "#a0aec0" : "#070B0F"
                                             anchors.verticalCenter: parent.verticalCenter
@@ -424,6 +418,7 @@ ApplicationWindow {
                                 Label {
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     text: "Connectez votre drone pour consulter"
+                                    font.letterSpacing: -0.5
                                     font.pixelSize: 13; color: "#5f6368"; horizontalAlignment: Text.AlignHCenter
                                 }
                                 Item { width: 1; height: 10 }
@@ -435,11 +430,6 @@ ApplicationWindow {
                                 visible: root.connectionState === 2
                                 spacing: 12
 
-                                // Inactivo
-                                Rectangle {
-                                    Layout.fillWidth: true; height: 32; color: "#f1f5f9"; radius: 6; border.color: "#cbd5e1"; border.width: 1
-                                    Label { anchors.centerIn: parent; text: "INACTIF"; color: "#64748b"; font.bold: true; font.pixelSize: 13 }
-                                }
 
                                 // Bateria & Senal
                                 RowLayout {
@@ -475,6 +465,7 @@ ApplicationWindow {
                                                     text: "Batterie"
                                                     color: "#64748b"
                                                     font.pixelSize: 13
+                                                    font.letterSpacing: -0.5
                                                     anchors.verticalCenter: parent.verticalCenter
                                                 }
                                             }
@@ -484,6 +475,7 @@ ApplicationWindow {
                                                 text: "84.97%"
                                                 color: "#00a651"
                                                 font.pixelSize: 20
+                                                font.letterSpacing: -0.5
                                                 font.bold: true
                                                 font.family: "Geist Mono"
                                             }
@@ -516,6 +508,7 @@ ApplicationWindow {
                                                 }
 
                                                 Label {
+                                                    font.letterSpacing: -0.5
                                                     text: "Signal"
                                                     color: "#64748b"
                                                     font.pixelSize: 13
@@ -525,6 +518,7 @@ ApplicationWindow {
                                             }
 
                                             Label {
+                                                font.letterSpacing: -0.5
                                                 text: "90.42"
                                                 color: "#000000"
                                                 font.pixelSize: 20
@@ -566,6 +560,7 @@ ApplicationWindow {
                                             }
 
                                             Label {
+                                                font.letterSpacing: -0.5
                                                 text: "GPS du drone"
                                                 font.bold: true
                                                 font.pixelSize: 14
@@ -585,6 +580,7 @@ ApplicationWindow {
                                             }
 
                                             Label {
+                                                font.letterSpacing: -0.5
                                                 text: "13 sats"
                                                 color: "#64748b"
                                                 font.pixelSize: 13
@@ -596,33 +592,31 @@ ApplicationWindow {
                                             Layout.fillWidth: true
                                             Column {
                                                 spacing: 4
-                                                Label { text: "Lat:"; color: "#64748b"; font.family: "Geist Mono"; font.pixelSize: 14 }
-                                                Label { text: "Lng:"; color: "#64748b"; font.family: "Geist Mono"; font.pixelSize: 14 }
+                                                Label { text: "Lat:"; color: "#64748b"; font.family: "Geist Mono"; font.pixelSize: 12; font.letterSpacing: -0.5}
+                                                Label { text: "Lng:"; color: "#64748b"; font.family: "Geist Mono"; font.pixelSize: 12; font.letterSpacing: -0.5 }
                                             }
                                             Item { Layout.fillWidth: true }
                                             Column {
                                                 spacing: 4
-                                                Label { text: "19.43"; font.family: "Geist Mono"; font.pixelSize: 14; horizontalAlignment: Text.AlignRight }
-                                                Label { text: "-99.13"; font.family: "Geist Mono"; font.pixelSize: 14; horizontalAlignment: Text.AlignRight }
+                                                Label { text: "19.43"; font.family: "GeistMono-Light"; font.pixelSize: 12; horizontalAlignment: Text.AlignRight; font.letterSpacing: -0.5}
+                                                Label { text: "-99.13"; font.family: "GeistMono-Light"; font.pixelSize: 12; horizontalAlignment: Text.AlignRight; font.letterSpacing: -0.5}
                                             }
                                         }
 
-                                        Label { Layout.alignment: Qt.AlignHCenter; text: "Précision: ±3.9m"; color: "#64748b"; font.pixelSize: 12 }
+                                        Label { Layout.alignment: Qt.AlignHCenter; text: "Précision: ±3.9m"; color: "#64748b"; font.pixelSize: 12; font.letterSpacing: -0.5 }
                                     }
                                 }
 
-                                Label { Layout.alignment: Qt.AlignHCenter; text: "Mis à jour : 23h56"; color: "#64748b"; font.pixelSize: 12 }
+                                Label { Layout.alignment: Qt.AlignHCenter; text: "Mis à jour : 23h56"; color: "#64748b"; font.pixelSize: 12; font.letterSpacing: -0.5 }
                             }
                         }
                     }
 
-                    Rectangle { width: parent.width; height: 1; color: "#dde1ec" }
-
-                    // --- SECCIÓN MODO DE DIBUJO ---
                     Label {
                         text: "MODE DESSIN"
                         font.pixelSize: 12
                         font.bold: true
+                        font.letterSpacing: -0.5
                         font.capitalization: Font.AllUppercase
                         color: "#5f6368"
                         leftPadding: 4
@@ -634,7 +628,7 @@ ApplicationWindow {
                             id: misionBtn
                             Layout.fillWidth: true
                             Layout.preferredWidth: 100
-                            implicitHeight: 44
+                            implicitHeight: 32
 
                             // Propiedad para saber si está seleccionado
                             property bool active: mapView.drawingMode
@@ -643,28 +637,43 @@ ApplicationWindow {
                                 color: misionBtn.active ? "#00a651" : (misionBtn.pressed ? "#f0f4f8" : (misionBtn.hovered ? "#f8fafd" : "white"))
                                 border.color: misionBtn.active ? "#00a651" : "#e2e8f0"
                                 border.width: 1
-                                radius: 10
+                                radius: 8
                             }
 
-                            contentItem: RowLayout {
-                                anchors.centerIn: parent
-                                spacing: 8
-                                Image {
-                                    source: "/qt/qml/projet_de_recherche/assets/icons/circulo_dibujar.svg"
-                                    sourceSize: Qt.size(18, 18)
-                                    Layout.alignment: Qt.AlignVCenter
-                                    layer.enabled: misionBtn.active
-                                    layer.effect: MultiEffect {
-                                        colorization: 1.0
-                                        colorizationColor: "white"
+                            contentItem: Item {
+                                implicitWidth: rowContent.width
+                                implicitHeight: rowContent.height-10
+
+                                Row {
+                                    id: rowContent
+                                    anchors.centerIn: parent
+                                    spacing: 4 // Ajusta este número para acercar o alejar (4 es bastante pegado)
+
+                                    Image {
+                                        source: "/qt/qml/projet_de_recherche/assets/icons/circulo_dibujar.svg"
+                                        width: 16
+                                        height: 16
+                                        sourceSize: Qt.size(16, 16)
+                                        anchors.verticalCenter: parent.verticalCenter
+
+                                        layer.enabled: true
+                                            layer.effect: MultiEffect {
+                                                colorization: 1.0
+                                                // Lógica de color: si está activo es blanco, si no, es el gris oscuro
+                                                colorizationColor: misionBtn.active ? "white" : "#51565A"
+                                            }
                                     }
-                                }
-                                Label {
-                                    text: "Mission"
-                                    font.pixelSize: 15
-                                    font.weight: Font.Medium
-                                    color: misionBtn.active ? "white" : "#4a5568"
-                                    verticalAlignment: Text.AlignVCenter
+
+                                    Label {
+                                        text: "Mission"
+                                        font.pixelSize: 13
+                                        font.weight: Font.Medium
+                                        font.letterSpacing: -0.5
+                                        color: misionBtn.active ? "white" : "#4a5568"
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        // Añadimos un pequeño ajuste por si el SVG tiene margen interno
+                                        leftPadding: 0
+                                    }
                                 }
                             }
                             onClicked: {
@@ -677,7 +686,7 @@ ApplicationWindow {
                             id: restriccionBtn
                             Layout.fillWidth: true
                             Layout.preferredWidth: 100
-                            implicitHeight: 44
+                            implicitHeight: 32
 
                             property bool active: mapView.drawingRestrictions
                             enabled: mapView.vertices.length >= 3 || mapView.restrictionZones.length > 0
@@ -690,29 +699,43 @@ ApplicationWindow {
                                 opacity: restriccionBtn.enabled ? 1.0 : 0.4
                             }
 
-                            contentItem: RowLayout {
-                                anchors.centerIn: parent
-                                spacing: 8
-                                Image {
-                                    source: "/qt/qml/projet_de_recherche/assets/icons/restric_icon.svg"
-                                    sourceSize: Qt.size(18, 18)
-                                    Layout.alignment: Qt.AlignVCenter
-                                    opacity: restriccionBtn.enabled ? 1.0 : 0.4
-                                    layer.enabled: restriccionBtn.active
-                                    layer.effect: MultiEffect {
-                                        colorization: 1.0
-                                        colorizationColor: "white"
+                            contentItem: Item {
+                                // Usamos Item + Row para control total del espacio
+                                implicitWidth: rowRestrict.width
+                                implicitHeight: rowRestrict.height
+
+                                Row {
+                                    id: rowRestrict
+                                    anchors.centerIn: parent
+                                    spacing: 4 // Ajusta aquí para acercarlos más o menos
+
+                                    Image {
+                                        source: "/qt/qml/projet_de_recherche/assets/icons/restric_icon.svg"
+                                        width: 16
+                                        height: 16
+                                        sourceSize: Qt.size(16, 16)
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        opacity: restriccionBtn.enabled ? 1.0 : 0.4
+
+                                        layer.enabled: true
+                                        layer.effect: MultiEffect {
+                                            colorization: 1.0
+                                            colorizationColor: restriccionBtn.active ? "white" : "#4a5568"
+                                        }
+                                    }
+
+                                    Label {
+                                        text: "Restriction"
+                                        font.pixelSize: 13 // Un poco más pequeño para que respire en 32 de altura
+                                        font.weight: Font.Medium
+                                        font.letterSpacing: -0.5 // Un interespaciado sutil
+                                        color: restriccionBtn.active ? "white" : "#4a5568"
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        opacity: restriccionBtn.enabled ? 1.0 : 0.4
                                     }
                                 }
-                                Label {
-                                    text: "Restriction"
-                                    font.pixelSize: 15
-                                    font.weight: Font.Medium
-                                    color: restriccionBtn.active ? "white" : "#4a5568"
-                                    verticalAlignment: Text.AlignVCenter
-                                    opacity: restriccionBtn.enabled ? 1.0 : 0.4
-                                }
                             }
+
                             onClicked: {
                                 mapView.drawingMode = false
                                 mapView.drawingRestrictions = true
@@ -729,7 +752,7 @@ ApplicationWindow {
                             width: parent.width
                             Label {
                                 text: "Mission de vol"
-                                font.pixelSize: 12; font.bold: true; font.capitalization: Font.AllUppercase; color: "#5f6368"
+                                font.pixelSize: 12; font.bold: true; font.capitalization: Font.AllUppercase; color: "#5f6368"; font.letterSpacing: -0.5
                                 Layout.fillWidth: true
                             }
                         }
@@ -803,13 +826,15 @@ ApplicationWindow {
                                     source: "/qt/qml/projet_de_recherche/assets/icons/drone_icon.svg"
                                     sourceSize: Qt.size(48, 48)
                                     anchors.horizontalCenter: parent.horizontalCenter
-                                    opacity: 0.5
+                                    opacity: 0.3
                                 }
                                 Label {
+                                    font.letterSpacing: -0.5
                                     text: "Sans mision"; font.pixelSize: 16; font.bold: true; color: "#4a5568"
                                     anchors.horizontalCenter: parent.horizontalCenter
                                 }
                                 Label {
+                                    font.letterSpacing: -0.5
                                     text: "Crée-en une pour commencer"; font.pixelSize: 13; color: "#94a3b8"
                                     anchors.horizontalCenter: parent.horizontalCenter
                                 }
@@ -842,6 +867,7 @@ ApplicationWindow {
                                     }
                                     Label {
                                         text: "Mission Principale"
+                                        font.letterSpacing: -0.5
                                         font.pixelSize: 15; font.bold: true; color: "#070B0F"
                                     }
                                     Item { Layout.fillWidth: true }
@@ -855,6 +881,7 @@ ApplicationWindow {
                                 }
 
                                 Label {
+                                    font.letterSpacing: -0.5
                                     text: mapView.vertices.length + " Sommets  -  0 waypoints"
                                     font.pixelSize: 13; color: "#5f6368"
                                 }
@@ -862,6 +889,7 @@ ApplicationWindow {
                                 Rectangle { width: parent.width; height: 1; color: "#edf2f7" }
 
                                 Label {
+                                    font.letterSpacing: -0.5
                                     text: "Sommets de la zone (" + mapView.vertices.length + ")"
                                     font.pixelSize: 13; font.bold: true; color: "#5f6368"
                                 }
@@ -953,6 +981,7 @@ ApplicationWindow {
                                                 font.bold: true
                                                 font.pixelSize: 15
                                                 Layout.alignment: Qt.AlignVCenter
+                                                font.letterSpacing: -0.5
                                             }
                                         }
 
@@ -1002,6 +1031,7 @@ ApplicationWindow {
                                                     text: "Exporter"
                                                     font.bold: true
                                                     font.pixelSize: 15
+                                                    font.letterSpacing: -0.5
                                                     color: exportMisionBtn.enabled ? "#4a5568" : "#94a3b8"
                                                     Layout.alignment: Qt.AlignVCenter
                                                 }
@@ -1176,7 +1206,7 @@ ApplicationWindow {
                                     source: "/qt/qml/projet_de_recherche/assets/icons/lock_icon.svg"
                                     sourceSize: Qt.size(40, 40)
                                     anchors.horizontalCenter: parent.horizontalCenter
-                                    opacity: 0.5
+                                    opacity: 0.3
                                 }
                                 Label {
                                     text: "Aucune zone de restriction"; font.pixelSize: 15; font.bold: true; color: "#4a5568"
