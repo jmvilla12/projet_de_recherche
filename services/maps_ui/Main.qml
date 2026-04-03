@@ -1456,15 +1456,28 @@ ApplicationWindow {
                                             layer.enabled: true
                                             layer.effect: MultiEffect { colorization: 1.0; colorizationColor: "#5f6368" }
                                         }
-                                        Label { text: "ZONE"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase }
+                                        Label { text: "ZONE"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase; font.letterSpacing: -0.5 }
                                     }
                                     Label {
                                         text: {
                                             var a = mapView.netArea;
-                                            return a >= 1000000 ? (a/1000000).toFixed(2) + " km²" : (a > 0 ? a.toFixed(2) + " m²" : "0 m²")
+
+                                            if (a >= 10000) {
+                                                // A partir de 10,000 m², calculamos en km² (1 km² = 1,000,000 m²)
+                                                // Usamos toFixed(2) o toFixed(3) dependiendo de la precisión que busques
+                                                return (a / 1000000).toFixed(2) + " km²";
+                                            } else if (a > 0) {
+                                                // Menos de 10,000 m² se queda en m²
+                                                return a.toFixed(2) + " m²";
+                                            } else {
+                                                return "0 m²";
+                                            }
                                         }
                                         anchors.horizontalCenter: parent.horizontalCenter
-                                        font.pixelSize: 16; font.bold: true; color: "#1a2744"; font.family: "Geist Sans"
+                                        font.pixelSize: 16
+                                        font.bold: true
+                                        color: "#1a2744"
+                                        font.family: "Geist Sans"
                                     }
                                 }
                             }
@@ -1486,7 +1499,7 @@ ApplicationWindow {
                                             layer.enabled: true
                                             layer.effect: MultiEffect { colorization: 1.0; colorizationColor: "#5f6368" }
                                         }
-                                        Label { text: "Périmètre"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase }
+                                        Label { text: "Périmètre"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase; font.letterSpacing: -0.5 }
                                     }
                                     Label {
                                         text: {
@@ -1516,7 +1529,7 @@ ApplicationWindow {
                                             layer.enabled: true
                                             layer.effect: MultiEffect { colorization: 1.0; colorizationColor: "#5f6368" }
                                         }
-                                        Label { text: "Distance"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase }
+                                        Label { text: "Distance"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase; font.letterSpacing: -0.5 }
                                     }
                                     Label {
                                         text: "0 m"
@@ -1543,7 +1556,7 @@ ApplicationWindow {
                                             layer.enabled: true
                                             layer.effect: MultiEffect { colorization: 1.0; colorizationColor: "#5f6368" }
                                         }
-                                        Label { text: "Temps Est."; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase }
+                                        Label { text: "Temps Est."; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase; font.letterSpacing: -0.5}
                                     }
                                     Label {
                                         text: "0 min"
