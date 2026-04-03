@@ -768,7 +768,7 @@ ApplicationWindow {
                                 anchors.fill: parent
                                 property real margin: 0.6
                                 ShapePath {
-                                        strokeColor: "#94a3b8"
+                                        strokeColor: "#8094a3b8"
                                         strokeWidth: 1.2
                                         fillColor: "transparent"
                                         strokeStyle: ShapePath.DashLine
@@ -875,7 +875,7 @@ ApplicationWindow {
                                         width: 80; height: 24; radius: 6; color: "#e8f0fe"
                                         Label {
                                             anchors.centerIn: parent
-                                            text: "En cours..."; font.pixelSize: 11; color: "#4a5568"
+                                            text: "En cours..."; font.pixelSize: 11; color: "#4a5568"; font.letterSpacing: -0.5
                                         }
                                     }
                                 }
@@ -902,9 +902,9 @@ ApplicationWindow {
                                             anchors.fill: parent; anchors.margins: 8; spacing: 10
                                             Rectangle {
                                                 width: 20; height: 20; radius: 10; color: "#00a651"
-                                                Label { anchors.centerIn: parent; text: index + 1; font.pixelSize: 10; font.bold: true; color: "white" }
+                                                Label { anchors.centerIn: parent; text: index + 1; font.pixelSize: 10; font.bold: true; color: "white"; font.letterSpacing: -0.5 }
                                             }
-                                            Label { Layout.fillWidth: true; text: model.lat.toFixed(5) + ", " + model.lng.toFixed(5); font.pixelSize: 11; color: "#4a5568"; font.family: "Geist Mono" }
+                                            Label { Layout.fillWidth: true; text: model.lat.toFixed(5) + ", " + model.lng.toFixed(5); font.pixelSize: 11; color: "#4a5568"; font.family: "Geist Mono"; font.letterSpacing: -0.3 }
                                             Button {
                                                 id: deleteBtn
                                                 implicitWidth: 24
@@ -912,8 +912,8 @@ ApplicationWindow {
                                                 flat: true
 
                                                 background: Rectangle {
-                                                        color: deleteBtn.hovered ? "#f1f5f9" : "transparent" // Fondo sutil al hacer hover
-                                                        radius: 6 // Ajusta este valor para redondear más o menos
+                                                        color: deleteBtn.hovered ? "#f1f5f9" : "transparent"
+                                                        radius: 12 // Ajusta este valor para redondear más o menos
                                                         border.color: deleteBtn.hovered ? "#e2e8f0" : "transparent"
                                                         border.width: 1
                                                     }
@@ -1113,6 +1113,7 @@ ApplicationWindow {
                                 text: "ZONES DE RESTRICTIONS"
                                 font.pixelSize: 12
                                 font.bold: true
+                                font.letterSpacing: -0.5
                                 font.capitalization: Font.AllUppercase
                                 color: "#5f6368"
                                 Layout.fillWidth: true
@@ -1128,7 +1129,7 @@ ApplicationWindow {
                                 contentItem: RowLayout {
                                     anchors.centerIn: parent; spacing: 4
                                     Label { text: "+"; color: "#1a2744"; font.pixelSize: 16 }
-                                    Label { text: "Ajouter"; color: "#1a2744"; font.pixelSize: 13; font.bold: true }
+                                    Label { text: "Ajouter"; color: "#1a2744"; font.pixelSize: 13; font.bold: true; font.letterSpacing: -0.5 }
                                 }
                                 onClicked: {
                                     mapView.finalizeCurrentRestriction()
@@ -1209,7 +1210,7 @@ ApplicationWindow {
                                     opacity: 0.3
                                 }
                                 Label {
-                                    text: "Aucune zone de restriction"; font.pixelSize: 15; font.bold: true; color: "#4a5568"
+                                    text: "Aucune zone de restriction"; font.pixelSize: 15; font.bold: true; color: "#4a5568"; font.letterSpacing: -0.5
                                     anchors.horizontalCenter: parent.horizontalCenter
                                 }
                             }
@@ -1259,14 +1260,14 @@ ApplicationWindow {
                                                 Rectangle { width: 12; height: 12; radius: 6; color: zoneColor }
                                                 Label {
                                                     text: isCurrent ? (mapView.currentRestrictionName === "Nouvelle Zone" ? "Nouvelle Zone" : mapView.currentRestrictionName) : zoneData.name
-                                                    font.pixelSize: 15; font.bold: true; color: "#070B0F"
+                                                    font.pixelSize: 15; font.bold: true; color: "#070B0F"; font.letterSpacing: -0.5
                                                 }
                                                 Item { Layout.fillWidth: true }
                                                 Rectangle {
                                                     width: 48; height: 24; radius: 6; color: zoneColor
-                                                    Label { anchors.centerIn: parent; text: pts.length + " pts"; font.pixelSize: 11; font.bold: true; color: "white" }
+                                                    Label { anchors.centerIn: parent; text: pts.length + " pts"; font.pixelSize: 11; font.bold: true; color: "white"; font.letterSpacing: -0.5 }
                                                 }
-                                                Label { text: zoneCard.expanded ? "▲" : "▼"; font.pixelSize: 12; color: "#5f6368"; font.bold: true }
+                                                Label { text: zoneCard.expanded ? "▲" : "▼"; font.pixelSize: 12; color: "#5f6368"; font.bold: true; font.letterSpacing: -0.5 }
                                             }
                                         }
 
@@ -1279,7 +1280,7 @@ ApplicationWindow {
 
                                             Column {
                                                 width: parent.width; spacing: 6
-                                                Label { text: "Nom"; font.pixelSize: 12; color: "#5f6368" }
+                                                Label { text: "Nom"; font.pixelSize: 12; color: "#5f6368"; font.letterSpacing: -0.5 }
                                                 TextField {
                                                     width: parent.width; text: isCurrent ? mapView.currentRestrictionName : zoneData.name
                                                     background: Rectangle { radius: 6; border.color: "#e2e8f0"; border.width: 1; color: "white" }
