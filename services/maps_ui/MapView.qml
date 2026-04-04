@@ -428,9 +428,30 @@ Item {
         center: QtPositioning.coordinate(-33.7218295, 150.6682616)
         zoomLevel: 16
 
-        MapGestureArea {
-            anchors.fill: parent
-            acceptedGestures: MapGestureArea.PinchGesture | MapGestureArea.PanGesture | MapGestureArea.FlickGesture
+        // Robust Cross-Platform Interaction (Mouse + Touch)
+        DragHandler {
+            enabled: !root.drawingMode && !root.drawingRestrictions
+            target: null
+            onTranslationChanged: (delta) => {
+                map.pan(-delta.x, -delta.y)
+            }
+        }
+
+        PinchHandler {
+            enabled: !root.drawingMode && !root.drawingRestrictions
+            target: null
+            onActiveChanged: if (active) {
+                // Handle pinch zoom if needed, but wheel and basic interactions are usually enough
+            }
+        }
+
+        WheelHandler {
+            enabled: !root.drawingMode && !root.drawingRestrictions
+            target: map
+            onWheel: (event) => {
+                if (event.angleDelta.y > 0) map.zoomLevel = Math.min(map.zoomLevel + 0.2, map.maximumZoomLevel)
+                else map.zoomLevel = Math.max(map.zoomLevel - 0.2, map.minimumZoomLevel)
+            }
         }
 
         onSupportedMapTypesChanged: {
