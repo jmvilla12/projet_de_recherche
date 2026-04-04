@@ -4,4 +4,4 @@ add_library(pathfinding_lib STATIC
 )
 
 target_include_directories(pathfinding_lib PUBLIC .)
-target_link_libraries(pathfinding_lib PRIVATE Qt6::Core)
+target_link_libraries(pathfinding_lib PRIVATE Qt6::Core Qt6::Gui Qt6::Positioning)

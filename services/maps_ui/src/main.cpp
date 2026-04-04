@@ -6,6 +6,7 @@
 #include <QQuickStyle>
 
 #include "AreaController.h"
+#include "Pathfinding.h"
 
 #include <QLocationPermission>
 #include <QPermission>
@@ -51,6 +52,7 @@ int main(int argc, char* argv[]) {
     QQuickStyle::setStyle("Fusion");
 
     qmlRegisterType<AreaController>("PDR.Logic", 1, 0, "AreaController");
+    qmlRegisterType<Pathfinding>("PDR.Logic", 1, 0, "PathfindingService");
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("gpsManager", gpsManager);

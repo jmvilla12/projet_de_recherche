@@ -987,21 +987,28 @@ ApplicationWindow {
                                                 }
 
                                                 Label {
-                                                    text: "Générer l'itinéraire"
+                                                    text: mapView.calculatingPath ? "Calcul en cours..." : "Générer l'itinéraire"
                                                     color: "white"
                                                     font.bold: true
                                                     font.pixelSize: 15
                                                     font.letterSpacing: -0.5
                                                     anchors.verticalCenter: parent.verticalCenter
-                                                    // Aseguramos que no haya padding extra que los separe
                                                     leftPadding: 0
+                                                }
+
+                                                BusyIndicator {
+                                                    visible: mapView.calculatingPath
+                                                    running: mapView.calculatingPath
+                                                    width: 18; height: 18
+                                                    anchors.verticalCenter: parent.verticalCenter
                                                 }
                                             }
                                         }
                                         onClicked: {
-                                            mapView.startProcessing()
-                                            // Activar exportar al dar generar ruta (mock)
-                                            exportMisionBtn.enabled = true
+                                            if (!mapView.calculatingPath) {
+                                                mapView.startProcessing()
+                                                exportMisionBtn.enabled = true
+                                            }
                                         }
                                     }
 
@@ -1612,7 +1619,10 @@ ApplicationWindow {
                                         Label { text: "Distance"; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase; font.letterSpacing: -0.5 }
                                     }
                                     Label {
-                                        text: "0 m"
+                                        text: {
+                                            var d = mapView.generatedDistance;
+                                            return d > 1000 ? (d/1000).toFixed(2) + " km" : d.toFixed(2) + " m";
+                                        }
                                         anchors.horizontalCenter: parent.horizontalCenter
                                         font.pixelSize: 16; font.bold: true; color: "#1a2744"; font.family: "Geist Sans"
                                     }
@@ -1639,7 +1649,10 @@ ApplicationWindow {
                                         Label { text: "Temps Est."; color: "#5f6368"; font.pixelSize: 11; font.bold: true; font.capitalization: Font.AllUppercase; font.letterSpacing: -0.5}
                                     }
                                     Label {
-                                        text: "0 min"
+                                        text: {
+                                            var t = mapView.generatedTime;
+                                            return t > 60 ? (t/60).toFixed(1) + " min" : t.toFixed(0) + " s";
+                                        }
                                         anchors.horizontalCenter: parent.horizontalCenter
                                         font.pixelSize: 16; font.bold: true; color: "#1a2744"; font.family: "Geist Sans"
                                     }
