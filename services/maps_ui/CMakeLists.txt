@@ -2,6 +2,8 @@ set(MAPS_UI_SOURCES
     src/main.cpp
     src/AreaController.cpp
     src/AreaController.h
+    GPSManager.cpp
+    GPSManager.h
 )
 
 qt_add_executable(app_maps_ui
@@ -64,8 +66,16 @@ target_link_libraries(app_maps_ui
         export_service_lib
 )
 
+target_include_directories(app_maps_ui
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+
 # Deployment and Install
 set_target_properties(app_maps_ui PROPERTIES
     MACOSX_BUNDLE TRUE
+    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in
     WIN32_EXECUTABLE TRUE
 )

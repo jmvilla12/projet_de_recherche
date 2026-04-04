@@ -7,8 +7,30 @@
 
 #include "AreaController.h"
 
+#include <QLocationPermission>
+#include <QPermission>
+#include <QDebug>
+#include <QQmlEngine>
+#include <QQmlContext>
+#include "GPSManager.h"
+
 int main(int argc, char* argv[]) {
     QGuiApplication app(argc, argv);
+
+    GPSManager* gpsManager = new GPSManager(&app);
+
+    // Request Location Permission (Required for macOS/iOS)
+    QLocationPermission locationPermission;
+    locationPermission.setAccuracy(QLocationPermission::Precise);
+    locationPermission.setAvailability(QLocationPermission::WhenInUse);
+
+    app.requestPermission(locationPermission, [](const QPermission &p) {
+        if (p.status() == Qt::PermissionStatus::Granted) {
+            qDebug() << "Location permission granted! Sensor will wait for manual toggle.";
+        } else {
+            qDebug() << "Location permission denied or undetermined. Status: " << static_cast<int>(p.status());
+        }
+    });
 
     // Register Geist Sans fonts
     QFontDatabase::addApplicationFont(
@@ -31,6 +53,7 @@ int main(int argc, char* argv[]) {
     qmlRegisterType<AreaController>("PDR.Logic", 1, 0, "AreaController");
 
     QQmlApplicationEngine engine;
+    engine.rootContext()->setContextProperty("gpsManager", gpsManager);
     QObject::connect(
         &engine, &QQmlApplicationEngine::objectCreationFailed, &app,
         []() { QCoreApplication::exit(-1); }, Qt::QueuedConnection);

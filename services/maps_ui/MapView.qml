@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtLocation
 import QtPositioning
 import QtQuick.Effects
+import PDR.Logic
 
 Item {
     id: root
@@ -10,6 +11,38 @@ Item {
     property bool drawingMode: false
     property bool drawingRestrictions: false
     property var vertices: []
+    property var userPosition: QtPositioning.coordinate(gpsManager.latitude, gpsManager.longitude)
+    property bool isPositionValid: gpsManager.isValid
+    property bool isRelocating: false
+
+    Timer {
+        id: relocationTimer
+        interval: 1500
+        onTriggered: root.isRelocating = false
+    }
+
+    property bool waitingForFirstFix: false
+    property bool isSearching: false
+
+    Connections {
+        target: gpsManager
+        function onPositionChanged() {
+            if (gpsManager.isValid) {
+                console.log("Coordinate received: " + gpsManager.latitude + ", " + gpsManager.longitude);
+                
+                // If we were waiting for the first click to fix on user...
+                if (root.waitingForFirstFix) {
+                    map.center = QtPositioning.coordinate(gpsManager.latitude, gpsManager.longitude)
+                    map.zoomLevel = 18
+                    root.waitingForFirstFix = false
+                    root.isSearching = false // End searching state
+                    root.isRelocating = true // Start short anti-spam lock
+                    relocationTimer.start()
+                }
+            }
+        }
+    }
+
 
     // arreglo de arreglos con las zonas de restriccion
     property var restrictionZones: []
@@ -273,6 +306,21 @@ Item {
         map.pan(dx, dy)
     }
 
+    function centerOnCurrentPosition() {
+        if (!gpsManager.isValid) {
+            console.log("Activating GPS search...");
+            gpsManager.start();
+            waitingForFirstFix = true;
+            isSearching = true; // Stay disabled until fixed
+        } else if (!isRelocating && !isSearching) {
+            isRelocating = true
+            relocationTimer.start()
+            map.center = QtPositioning.coordinate(gpsManager.latitude, gpsManager.longitude);
+            map.zoomLevel = 18;
+            console.log("Manual re-center to: " + gpsManager.latitude + ", " + gpsManager.longitude);
+        }
+    }
+
     function resetDrawingState() {
         root.vertices = []
         root.restrictionZones = []
@@ -379,6 +427,11 @@ Item {
 
         center: QtPositioning.coordinate(-33.7218295, 150.6682616)
         zoomLevel: 16
+
+        MapGestureArea {
+            anchors.fill: parent
+            acceptedGestures: MapGestureArea.PinchGesture | MapGestureArea.PanGesture | MapGestureArea.FlickGesture
+        }
 
         onSupportedMapTypesChanged: {
             for (var i = 0; i < supportedMapTypes.length; i++) {
@@ -507,27 +560,6 @@ Item {
             }
         }
 
-        // DragHandler for precise manual panning when enabled
-        DragHandler {
-            id: dragHandler
-            enabled: root.dragModeEnabled
-            target: null
-            onCentroidChanged: {
-                if (dragHandler.active) {
-                    var delta = dragHandler.translation
-                    map.pan(-delta.x, -delta.y)
-                }
-            }
-        }
-
-        WheelHandler {
-            id: wheelHandler
-            target: map
-            onWheel: (event) => {
-                if (event.angleDelta.y > 0) map.zoomLevel = Math.min(map.zoomLevel + 0.2, map.maximumZoomLevel)
-                else map.zoomLevel = Math.max(map.zoomLevel - 0.2, map.minimumZoomLevel)
-            }
-        }
 
 
         // Internal Points (Small dots)
@@ -537,6 +569,48 @@ Item {
                 coordinate: QtPositioning.coordinate(lat, lng)
                 anchorPoint.x: 2; anchorPoint.y: 2
                 sourceItem: Rectangle { width: 4; height: 4; radius: 2; color: "#4caf50"; opacity: 0.6 }
+            }
+        }
+
+        // --- MARCUALADOR DE POSICION USUARIO ---
+        MapQuickItem {
+            id: userLocationMarker
+            coordinate: root.userPosition
+            visible: root.userPosition.isValid
+            anchorPoint.x: 9; anchorPoint.y: 9
+            z: 10 // Encima de los polígonos
+
+            sourceItem: Rectangle {
+                width: 18; height: 18; radius: 9
+                color: "#1a73e8"
+                border.color: "white"; border.width: 2.5
+                
+                layer.enabled: true
+                layer.effect: MultiEffect {
+                    shadowEnabled: true; shadowColor: "#401a73e8"; shadowBlur: 0.8; shadowVerticalOffset: 0
+                }
+
+                // Efecto de pulso suave
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: parent.width; height: parent.height; radius: parent.radius
+                    color: "#1a73e8"; opacity: 0.3
+                    scale: pulseAnim.scaleValue
+
+                    SequentialAnimation on scale {
+                        id: pulseAnim
+                        property real scaleValue: scale
+                        loops: Animation.Infinite; running: gpsManager.isValid
+                        NumberAnimation { from: 1; to: 2.2; duration: 2000; easing.type: Easing.OutQuart }
+                        NumberAnimation { from: 2.2; to: 1; duration: 0 }
+                        PauseAnimation { duration: 500 }
+                    }
+                    
+                    PropertyAnimation on opacity {
+                        loops: Animation.Infinite; running: gpsManager.isValid
+                        from: 0.4; to: 0; duration: 2000; easing.type: Easing.OutQuart
+                    }
+                }
             }
         }
     }

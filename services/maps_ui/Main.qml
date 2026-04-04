@@ -97,7 +97,7 @@ ApplicationWindow {
                             layer.effect: MultiEffect { colorization: 1.0; colorizationColor: "#00a651" }
                         }
                         Label {
-                            text: "GPS Drone: 19.43365, -99.13587  0m"
+                            text: mapView.userPosition.isValid ? "Ma Position: " + mapView.userPosition.latitude.toFixed(5) + ", " + mapView.userPosition.longitude.toFixed(5) : "Recherche GPS..."
                             color: "#4a5568"
                             font { family: "Geist Sans"; pixelSize: 13; letterSpacing: -0.2 }
                             anchors.verticalCenter: parent.verticalCenter
@@ -270,6 +270,9 @@ ApplicationWindow {
                             implicitWidth: 28
                             implicitHeight: 28
                             flat: true
+                            enabled: !mapView.isRelocating && !mapView.isSearching
+                            opacity: enabled ? 1.0 : 0.4
+                            onClicked: mapView.centerOnCurrentPosition()
 
                             background: Rectangle {
                                 color: relocateBtn.pressed ? "#e0e6ed" : (relocateBtn.hovered ? "#f0f4f8" : "white")
@@ -561,7 +564,7 @@ ApplicationWindow {
 
                                             Label {
                                                 font.letterSpacing: -0.5
-                                                text: "GPS du drone"
+                                                text: "Ma position GPS"
                                                 font.bold: true
                                                 font.pixelSize: 14
                                                 Layout.fillWidth: true
@@ -598,8 +601,8 @@ ApplicationWindow {
                                             Item { Layout.fillWidth: true }
                                             Column {
                                                 spacing: 4
-                                                Label { text: "19.43"; font.family: "GeistMono-Light"; font.pixelSize: 12; horizontalAlignment: Text.AlignRight; font.letterSpacing: -0.5}
-                                                Label { text: "-99.13"; font.family: "GeistMono-Light"; font.pixelSize: 12; horizontalAlignment: Text.AlignRight; font.letterSpacing: -0.5}
+                                                Label { text: mapView.isPositionValid ? mapView.userPosition.latitude.toFixed(4) : "--.--"; font.family: "GeistMono-Light"; font.pixelSize: 12; horizontalAlignment: Text.AlignRight; font.letterSpacing: -0.5}
+                                                Label { text: mapView.isPositionValid ? mapView.userPosition.longitude.toFixed(4) : "--.--"; font.family: "GeistMono-Light"; font.pixelSize: 12; horizontalAlignment: Text.AlignRight; font.letterSpacing: -0.5}
                                             }
                                         }
 
