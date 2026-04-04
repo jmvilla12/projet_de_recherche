@@ -956,35 +956,43 @@ ApplicationWindow {
                                             color: generarRutaBtn.pressed ? "#008a44" : "#00a651" // Efecto de oscurecer al presionar
                                         }
 
-                                        contentItem: RowLayout {
-                                            spacing: 8
+                                        contentItem: Item {
+                                            // Definimos el tamaño del contenido para que el centrado sea perfecto
+                                            implicitWidth: rowGenerate.width
+                                            implicitHeight: rowGenerate.height
 
-                                            Image {
-                                                source: "/qt/qml/projet_de_recherche/assets/icons/grid_icon.svg" // Ajusta la ruta si es necesario
-                                                Layout.preferredWidth: 18
-                                                Layout.preferredHeight: 18
-                                                sourceSize: Qt.size(18, 18)
-                                                fillMode: Image.PreserveAspectFit
-                                                Layout.alignment: Qt.AlignVCenter
+                                            Row {
+                                                id: rowGenerate
+                                                anchors.centerIn: parent
+                                                spacing: 4 // <--- Cambia a 2 si los quieres aún más pegados
 
-                                                // Forzamos el icono a color blanco
-                                                layer.enabled: true
-                                                layer.effect: MultiEffect {
-                                                    colorization: 1.0
-                                                    colorizationColor: "#ffffff"
+                                                Image {
+                                                    source: "/qt/qml/projet_de_recherche/assets/icons/grid_icon.svg"
+                                                    width: 18
+                                                    height: 18
+                                                    sourceSize: Qt.size(18, 18)
+                                                    fillMode: Image.PreserveAspectFit
+                                                    anchors.verticalCenter: parent.verticalCenter
+
+                                                    layer.enabled: true
+                                                    layer.effect: MultiEffect {
+                                                        colorization: 1.0
+                                                        colorizationColor: "#ffffff"
+                                                    }
+                                                }
+
+                                                Label {
+                                                    text: "Générer l'itinéraire"
+                                                    color: "white"
+                                                    font.bold: true
+                                                    font.pixelSize: 15
+                                                    font.letterSpacing: -0.5
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                    // Aseguramos que no haya padding extra que los separe
+                                                    leftPadding: 0
                                                 }
                                             }
-
-                                            Label {
-                                                text: "Générer l'itinéraire"
-                                                color: "white"
-                                                font.bold: true
-                                                font.pixelSize: 15
-                                                Layout.alignment: Qt.AlignVCenter
-                                                font.letterSpacing: -0.5
-                                            }
                                         }
-
                                         onClicked: {
                                             mapView.startProcessing()
                                             // Activar exportar al dar generar ruta (mock)
@@ -999,7 +1007,7 @@ ApplicationWindow {
                                             id: exportMisionBtn
                                             Layout.fillWidth: true
                                             implicitHeight: 44
-                                            enabled: false // Se habilita con Generar ruta
+                                            enabled: false
 
                                             background: Rectangle {
                                                 radius: 8
@@ -1008,32 +1016,45 @@ ApplicationWindow {
                                                 border.width: 1
                                             }
 
-                                            contentItem: RowLayout {
-                                                spacing: 8
+                                            contentItem: Item {
+                                                implicitWidth: rowExport.width
+                                                implicitHeight: rowExport.height
 
-                                                Image {
-                                                    source: "/qt/qml/projet_de_recherche/assets/icons/share_icon.svg"
-                                                    Layout.preferredWidth: 18
-                                                    Layout.preferredHeight: 18
-                                                    sourceSize: Qt.size(18, 18)
-                                                    fillMode: Image.PreserveAspectFit
-                                                    Layout.alignment: Qt.AlignVCenter
+                                                Row {
+                                                    id: rowExport
+                                                    anchors.centerIn: parent
+                                                    spacing: 4
 
-                                                    layer.enabled: true
-                                                    layer.effect: MultiEffect {
-                                                        colorization: 1.0
-                                                        // El icono cambia de color según si el botón está habilitado o no
-                                                        colorizationColor: exportMisionBtn.enabled ? "#4a5568" : "#94a3b8"
+                                                    Image {
+                                                        source: "/qt/qml/projet_de_recherche/assets/icons/share_icon.svg"
+                                                        width: 16
+                                                        height: 16
+                                                        sourceSize: Qt.size(16, 16)
+                                                        fillMode: Image.PreserveAspectFit
+                                                        anchors.verticalCenter: parent.verticalCenter
+
+                                                        // --- ESTO ES LO QUE BUSCABAS ---
+                                                        // Si el botón está habilitado, opacidad 1.0 (total),
+                                                        // si está deshabilitado, opacidad 0.4 (translúcido/apagado).
+                                                        opacity: exportMisionBtn.enabled ? 1.0 : 0.4
+
+                                                        // Mantenemos la lógica de color por estado (gris suave vs gris oscuro)
+                                                        layer.enabled: true
+                                                        layer.effect: MultiEffect {
+                                                            colorization: 1.0
+                                                            colorizationColor: exportMisionBtn.enabled ? "#4a5568" : "#94a3b8"
+                                                        }
                                                     }
-                                                }
 
-                                                Label {
-                                                    text: "Exporter"
-                                                    font.bold: true
-                                                    font.pixelSize: 15
-                                                    font.letterSpacing: -0.5
-                                                    color: exportMisionBtn.enabled ? "#4a5568" : "#94a3b8"
-                                                    Layout.alignment: Qt.AlignVCenter
+                                                    Label {
+                                                        text: "Exporter"
+                                                        font.bold: true
+                                                        font.pixelSize: 14
+                                                        font.letterSpacing: -0.5
+                                                        color: exportMisionBtn.enabled ? "#4a5568" : "#94a3b8"
+                                                        anchors.verticalCenter: parent.verticalCenter
+                                                        leftPadding: 0
+                                                    }
                                                 }
                                             }
                                         }
@@ -1297,7 +1318,7 @@ ApplicationWindow {
                                                 }
                                             }
 
-                                            Label { text: "Points (" + pts.length + ")"; font.pixelSize: 12; color: "#5f6368" }
+                                            Label { text: "Points (" + pts.length + ")"; font.pixelSize: 12; color: "#5f6368"; font.letterSpacing: -0.5 }
 
                                             Column {
                                                 width: parent.width; spacing: 4
@@ -1309,9 +1330,9 @@ ApplicationWindow {
                                                             anchors.fill: parent; anchors.margins: 8; spacing: 8
                                                             Label {
                                                                 text: (zoneCard.pointOffset + index + 1)
-                                                                font.pixelSize: 11; font.bold: true; color: "#e53935"; width: 22; horizontalAlignment: Text.AlignHCenter
+                                                                font.pixelSize: 11; font.bold: true; color: "#e53935"; width: 22; horizontalAlignment: Text.AlignHCenter; font.letterSpacing: -0.5
                                                             }
-                                                            Label { Layout.fillWidth: true; text: modelData.latitude.toFixed(5) + ", " + modelData.longitude.toFixed(5); font.pixelSize: 11; color: "#4a5568"; font.family: "Geist Mono" }
+                                                            Label { Layout.fillWidth: true; text: modelData.latitude.toFixed(5) + ", " + modelData.longitude.toFixed(5); font.pixelSize: 11; color: "#4a5568"; font.family: "Geist Mono"; font.letterSpacing: -0.5 }
                                                             Button {
                                                                 implicitWidth: 24
                                                                 implicitHeight: 24
@@ -1394,6 +1415,7 @@ ApplicationWindow {
                                                         font.bold: true
                                                         font.pixelSize: 14
                                                         Layout.alignment: Qt.AlignVCenter
+                                                        font.letterSpacing: -0.5
                                                     }
                                                 }
 
