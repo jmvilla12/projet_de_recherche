@@ -1057,6 +1057,39 @@ ApplicationWindow {
                                                     }
                                                 }
                                             }
+                                            onClicked: exportMenu.open()
+
+                                            Menu {
+                                                id: exportMenu
+                                                y: exportMisionBtn.height
+                                                width: exportMisionBtn.width
+                                                
+                                                background: Rectangle {
+                                                    implicitWidth: 200
+                                                    implicitHeight: 40
+                                                    color: "white"
+                                                    border.color: "#e2e8f0"
+                                                    radius: 8
+                                                    layer.enabled: true
+                                                    layer.effect: MultiEffect { shadowEnabled: true; shadowColor: "#15000000"; shadowBlur: 0.1; shadowVerticalOffset: 2 }
+                                                }
+
+                                                MenuItem {
+                                                    text: "Exporter CSV"
+                                                    font.pixelSize: 13
+                                                    font.letterSpacing: -0.2
+                                                }
+                                                MenuItem {
+                                                    text: "Exporter rapport" 
+                                                    font.pixelSize: 13
+                                                    font.letterSpacing: -0.2
+                                                }
+                                                MenuItem {
+                                                    text: "Exporter au drone"
+                                                    font.pixelSize: 13
+                                                    font.letterSpacing: -0.2
+                                                }
+                                            }
                                         }
                                         Button {
                                             id: clearMissionBtn
@@ -1328,9 +1361,13 @@ ApplicationWindow {
                                                         width: parent.width; height: 40; color: "#fef8f8"; radius: 6
                                                         RowLayout {
                                                             anchors.fill: parent; anchors.margins: 8; spacing: 8
-                                                            Label {
-                                                                text: (zoneCard.pointOffset + index + 1)
-                                                                font.pixelSize: 11; font.bold: true; color: "#e53935"; width: 22; horizontalAlignment: Text.AlignHCenter; font.letterSpacing: -0.5
+                                                            Rectangle {
+                                                                width: 20; height: 20; radius: 20; color: "#e53935"
+                                                                Label {
+                                                                    anchors.centerIn: parent
+                                                                    text: (zoneCard.pointOffset + index + 1)
+                                                                    font.pixelSize: 10; font.bold: true; color: "white"; font.letterSpacing: -0.5
+                                                                }
                                                             }
                                                             Label { Layout.fillWidth: true; text: modelData.latitude.toFixed(5) + ", " + modelData.longitude.toFixed(5); font.pixelSize: 11; color: "#4a5568"; font.family: "Geist Mono"; font.letterSpacing: -0.5 }
                                                             Button {
@@ -1390,32 +1427,48 @@ ApplicationWindow {
                                                     color: deleteZoneBtn.pressed ? "#b71c1c" : "#d32f2f"
                                                 }
 
-                                                contentItem: RowLayout {
-                                                    spacing: 8
-                                                    // Esto centra el contenido (icono + texto) dentro del botón
+                                                contentItem: Item {
+                                                    // Definimos el tamaño del contenido para el centrado
+                                                    implicitWidth: rowDelete.width
+                                                    implicitHeight: rowDelete.height
 
-                                                    Image {
-                                                        source: "/qt/qml/projet_de_recherche/assets/icons/delete_icon_white.svg"
-                                                        // Tamaño pequeño para el icono
-                                                        Layout.preferredWidth: 16
-                                                        Layout.preferredHeight: 16
-                                                        sourceSize: Qt.size(16, 16)
-                                                        fillMode: Image.PreserveAspectFit
+                                                    Row {
+                                                        id: rowDelete
+                                                        anchors.centerIn: parent
+                                                        spacing: 4 // Icono y texto bien pegaditos
 
-                                                        layer.enabled: true
-                                                        layer.effect: MultiEffect {
-                                                            colorization: 1.0
-                                                            colorizationColor: "#ffffff"
+                                                        Image {
+                                                            source: "/qt/qml/projet_de_recherche/assets/icons/delete_icon_white.svg"
+                                                            width: 16
+                                                            height: 16
+                                                            sourceSize: Qt.size(16, 16)
+                                                            fillMode: Image.PreserveAspectFit
+                                                            anchors.verticalCenter: parent.verticalCenter
+
+                                                            // Si el botón está desactivado, se ve opaco (0.4)
+                                                            // (Ajusta 'parent.enabled' por el ID de tu botón si es necesario)
+                                                            opacity: parent.enabled ? 1.0 : 0.4
+
+                                                            layer.enabled: true
+                                                            layer.effect: MultiEffect {
+                                                                colorization: 1.0
+                                                                colorizationColor: "#ffffff"
+                                                            }
                                                         }
-                                                    }
 
-                                                    Label {
-                                                        text: "Supprimer la zone"
-                                                        color: "white"
-                                                        font.bold: true
-                                                        font.pixelSize: 14
-                                                        Layout.alignment: Qt.AlignVCenter
-                                                        font.letterSpacing: -0.5
+                                                        Label {
+                                                            text: "Supprimer la zone"
+                                                            color: "white"
+                                                            font.bold: true
+                                                            font.pixelSize: 14
+                                                            font.letterSpacing: -0.5
+                                                            anchors.verticalCenter: parent.verticalCenter
+
+                                                            // El texto también hereda la opacidad del botón automáticamente,
+                                                            // pero podemos forzarla si queremos que sea idéntica al icono
+                                                            opacity: parent.enabled ? 1.0 : 0.6
+                                                            leftPadding: 0
+                                                        }
                                                     }
                                                 }
 
