@@ -680,7 +680,8 @@ ApplicationWindow {
                                 }
                             }
                             onClicked: {
-                                mapView.drawingMode = true
+                                var wasActive = mapView.drawingMode
+                                mapView.drawingMode = !wasActive
                                 mapView.drawingRestrictions = false
                             }
                         }
@@ -740,8 +741,9 @@ ApplicationWindow {
                             }
 
                             onClicked: {
+                                var wasActive = mapView.drawingRestrictions
+                                mapView.drawingRestrictions = !wasActive
                                 mapView.drawingMode = false
-                                mapView.drawingRestrictions = true
                             }
                         }
                     }

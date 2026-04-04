@@ -84,9 +84,9 @@ Item {
     ListModel { id: dashModel }
 
     property bool isProcessing: false
-    property int processingStage: 0 // 0: Idle, 1: Points, 2: Subdividing, 3: Done // we still have to work on this :ssss
+    property int processingStage: 0
+    property bool isDraggingPoint: false
 
-    property bool dragModeEnabled: false
 
     // muestra el poligono y los puntos
     function updatePolygonPaths() {
@@ -205,6 +205,7 @@ Item {
     }
 
     function recalculateTotalRestrictionArea() {
+        if (isDraggingPoint) return;
         var total = 0;
         for (var i = 0; i < restrictionZones.length; i++) {
             total += calculatePolygonArea(restrictionZones[i].points);
@@ -263,6 +264,7 @@ Item {
     }
 
     function rebuildRestrictionModel() {
+        if (isDraggingPoint) return;
         restrictionModel.clear();
         for (var z = 0; z < restrictionZones.length; z++) {
             var zone = restrictionZones[z];
@@ -525,9 +527,15 @@ Item {
                     MouseArea {
                         id: markerMA
                         anchors.fill: parent
+                        onPressed: {
+                            isDraggingPoint = true
+                            markerMA.isDragging = true
+                        }
+                        onReleased: {
+                            isDraggingPoint = false
+                            markerMA.isDragging = false
+                        }
                         property bool isDragging: false
-                        onPressed: isDragging = true
-                        onReleased: isDragging = false
                         onPositionChanged: (mouse) => {
                             if (isDragging) {
                                 var mapPoint = markerMA.mapToItem(map, mouse.x, mouse.y);
@@ -564,9 +572,15 @@ Item {
                     MouseArea {
                         id: restrMA
                         anchors.fill: parent
+                        onPressed: {
+                            isDraggingPoint = true
+                            restrMA.isDragging = true
+                        }
+                        onReleased: {
+                            isDraggingPoint = false
+                            restrMA.isDragging = false
+                        }
                         property bool isDragging: false
-                        onPressed: isDragging = true
-                        onReleased: isDragging = false
                         onPositionChanged: (mouse) => {
                             if (isDragging) {
                                 var mapPoint = restrMA.mapToItem(map, mouse.x, mouse.y);
@@ -779,30 +793,6 @@ Item {
             }
         }
 
-        // Drag Mode Toggle
-        Button {
-            id: dragToggleBtn
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: 32; height: 32
-            checkable: true
-            checked: root.dragModeEnabled
-            onToggled: root.dragModeEnabled = checked
-            
-            contentItem: Label {
-                text: root.dragModeEnabled ? "🖐" : "🖱"
-                font.pixelSize: 16
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                color: dragToggleBtn.checked ? "#1a73e8" : "#455a64"
-            }
-            
-            background: Rectangle { 
-                radius: 16
-                color: dragToggleBtn.checked ? "#e8f0fe" : (dragToggleBtn.pressed ? "#f0f0f0" : "white")
-                border.color: dragToggleBtn.checked ? "#1a73e8" : "#dde1ec"
-                border.width: 1.5
-            }
-        }
 
         // Zoom buttons
         Column {
