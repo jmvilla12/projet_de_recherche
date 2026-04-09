@@ -35,7 +35,7 @@ private:
     bool m_isSimInitialized = false;
     bool m_isSimLaunching = false;
 
-    struct GeoCoord { double lat; double lng; };
+    struct GeoCoord { double lat; double lng; int cell_id = 0; };
     struct Point2D  { double x;   double y;   };
 
     Point2D  geoToLocal (const GeoCoord& ref, const GeoCoord& point) const;

@@ -202,8 +202,9 @@ QList<Pathfinding::Point2D> Pathfinding::findSafePath(const QPointF& p1, const Q
         QPointF center(0, 0); for (const QPointF& p : poly) center += p; center /= poly.size();
         for (const QPointF& p : poly) {
             QPointF dir = (p - center); double len = qSqrt(dir.x()*dir.x() + dir.y()*dir.y());
-            // Buffer nodes away from corners to avoid "scuffing" the restriction
-            if (len > 0) nodes << (p + (dir / len) * 4.0); // Increased buffer from 2.0 to 4.0
+            // Buffer nodes away from corners to avoid "scuffing" the restriction.
+            // Reduced from 4.0 to 0.5 for much tighter obstacle hugging.
+            if (len > 0) nodes << (p + (dir / len) * 0.5); 
         }
     }
     
@@ -341,6 +342,7 @@ QList<Pathfinding::GeoCoord> Pathfinding::computeGrid(const QPainterPath& operab
     bool goLeftToRight = true;
     QPointF currentPos;
     bool hasPos = false;
+    int currentCellId = 1; // start at 1
 
     while (currentId != -1) {
         ScanSegment& seg = segments[currentId];
@@ -360,7 +362,9 @@ QList<Pathfinding::GeoCoord> Pathfinding::computeGrid(const QPainterPath& operab
                 QList<Point2D> transit = findSafePath(p1, p2, restrUnionLocal, restrPolys);
                 for (const Point2D& wp : transit) {
                     if (qAbs(wp.x) > 1e-6 || qAbs(wp.y) > 1e-6) {
-                        finalPath << localToGeo(refCoord, wp);
+                        GeoCoord gc = localToGeo(refCoord, wp);
+                        gc.cell_id = currentCellId;
+                        finalPath << gc;
                     }
                 }
             }
@@ -368,8 +372,14 @@ QList<Pathfinding::GeoCoord> Pathfinding::computeGrid(const QPainterPath& operab
 
         QPointF urA = inv.map(entryNode);
         QPointF urB = inv.map(exitNode);
-        finalPath << localToGeo(refCoord, {urA.x(), urA.y()});
-        finalPath << localToGeo(refCoord, {urB.x(), urB.y()});
+        
+        GeoCoord gcA = localToGeo(refCoord, {urA.x(), urA.y()});
+        gcA.cell_id = currentCellId;
+        finalPath << gcA;
+        
+        GeoCoord gcB = localToGeo(refCoord, {urB.x(), urB.y()});
+        gcB.cell_id = currentCellId;
+        finalPath << gcB;
         
         currentPos = exitNode;
         hasPos = true;
@@ -405,6 +415,9 @@ QList<Pathfinding::GeoCoord> Pathfinding::computeGrid(const QPainterPath& operab
                         goLeftToRight = (d1 < d2);
                     }
                 }
+            }
+            if (nextId != -1) {
+                currentCellId++; // Increment cell ID for the new topological region
             }
         }
 
@@ -476,21 +489,20 @@ void Pathfinding::runVrxSimulation() {
             launchCommand(baseEnv + "ros2 launch vrx_gz vrx_environment.launch.py world:=sydney_regatta");
             QThread::msleep(5000);
 
-            // 2) Spawnear WAM-V
+            // 2) Spawnear WAM-V con bridges ROS2 (IMPORTANTE: usar full)
             launchCommand(baseEnv + "ros2 launch vrx_gz spawn.launch.py world:=sydney_regatta sim_mode:=full name:=wamv model:=wam-v");
             QThread::msleep(3000);
             
             m_isSimInitialized = true;
+        } else {
+            // Matar las secuencias previas del controlador (sólo la parte 3) 
+            QProcess::execute("sh", QStringList() << "-c" << "pkill -f fast_uav_waypoints");
+            QThread::msleep(1000);
         }
 
-        // 3) Publicar waypoint GPS desde JSON
-        launchCommand(baseEnv + "ros2 run gps_waypoints gps_waypoint_node --ros-args -p checkpoints_file:=" + savePath);
-        
-        // 4) Convertir GPS -> ENU
-        launchCommand(baseEnv + "ros2 run gps_waypoints gps_waypoint_converter");
-        
-        // 5) Controlador
-        launchCommand(baseEnv + "ros2 run gps_waypoints gps_waypoint_controller --ros-args -p goal_topic:=/wamv/goal_pose -p state_source:=gps_imu -p gps_topic:=/wamv/sensors/gps/gps/fix -p imu_topic:=/wamv/sensors/imu/imu/data -p control_mode:=thrusters -p left_thrust_topic:=/wamv/thrusters/left/thrust -p right_thrust_topic:=/wamv/thrusters/right/thrust -p left_pos_topic:=/wamv/thrusters/left/pos -p right_pos_topic:=/wamv/thrusters/right/pos -p k_thrust_lin:=82.0 -p k_thrust_ang:=28.0 -p max_thrust:=235.0 -p heading_slowdown_rad:=0.9 -p heading_inplace_rad:=1.35 -p heading_deadband_rad:=0.2 -p turn_close_dist:=20.0 -p min_forward_thrust:=10.0 -p turn_to_forward_ratio:=0.55 -p turn_bias_thrust:=24.0");
+        // 3) T3 - Waypoints + converter + controlador (mas rapido)
+        // Opcional: --ros-args -p max_thrust:=380.0 -p k_thrust_lin:=140.0
+        launchCommand(baseEnv + "ros2 launch gps_waypoints fast_uav_waypoints.launch.py checkpoints_file:=" + savePath);
 
         qDebug() << "[SIM] Séquence de lancement terminée.";
         
@@ -550,6 +562,7 @@ void Pathfinding::calculateBestRoute() {
         QVariantMap pm;
         pm["latitude"] = point.lat;
         pm["longitude"] = point.lng;
+        pm["cell_id"] = point.cell_id;
         m_lastPath.append(pm);
     }
     emit pathCalculated(m_lastPath, best.dist, best.time, best.name);
