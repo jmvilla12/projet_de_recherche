@@ -14,6 +14,7 @@ class Pathfinding : public QObject {
     Q_OBJECT
   public:
     explicit Pathfinding(QObject* parent = nullptr);
+    virtual ~Pathfinding();
 
     Q_INVOKABLE void setMissionData(const QVariantList& missionPoints, const QVariantList& restrictionZones);
     Q_INVOKABLE void calculateBestRoute();
@@ -27,6 +28,7 @@ private:
     QVariantList m_missionPoints;
     QVariantList m_restrictionZones;
     QVariantList m_lastPath; // cached for export
+    bool m_isSimInitialized = false;
 
     struct GeoCoord { double lat; double lng; };
     struct Point2D  { double x;   double y;   };

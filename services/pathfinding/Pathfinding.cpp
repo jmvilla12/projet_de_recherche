@@ -16,6 +16,10 @@ const double DRONE_SPEED = 5.0;
 const double TURN_PENALTY = 2.0;
 
 Pathfinding::Pathfinding(QObject* parent) : QObject(parent) {}
+Pathfinding::~Pathfinding() {
+    qDebug() << "[Pathfinding] Nettoyage des processus ROS2/Gazebo...";
+    QProcess::execute("pkill -f \"ros2|vrx|gz\"");
+}
 
 void Pathfinding::setMissionData(const QVariantList& missionPoints, const QVariantList& restrictionZones) {
     m_missionPoints = missionPoints;
@@ -463,17 +467,21 @@ void Pathfinding::runVrxSimulation() {
 
     qDebug() << "[SIM] Lancement de la séquence ROS2...";
 
-    // 1) Iniciar mundo (Gazebo)
-    launch(baseEnv + "ros2 launch vrx_gz vrx_environment.launch.py world:=sydney_regatta");
-    
-    // Attente de 5 secondes après le premier commande
-    QThread::msleep(5000);
+    if (!m_isSimInitialized) {
+        // 1) Iniciar mundo (Gazebo)
+        launch(baseEnv + "ros2 launch vrx_gz vrx_environment.launch.py world:=sydney_regatta");
+        
+        // Attente de 5 secondes après le premier commande
+        QThread::msleep(5000);
 
-    // 2) Spawnear WAM-V
-    launch(baseEnv + "ros2 launch vrx_gz spawn.launch.py world:=sydney_regatta sim_mode:=full name:=wamv model:=wam-v");
-    
-    // Attente de 3 secondes después del segundo comando
-    QThread::msleep(3000);
+        // 2) Spawnear WAM-V
+        launch(baseEnv + "ros2 launch vrx_gz spawn.launch.py world:=sydney_regatta sim_mode:=full name:=wamv model:=wam-v");
+        
+        // Attente de 3 secondes después del segundo comando
+        QThread::msleep(3000);
+        
+        m_isSimInitialized = true;
+    }
 
     // 3) Publicar waypoint GPS desde JSON
     launch(baseEnv + "ros2 run gps_waypoints gps_waypoint_node --ros-args -p checkpoints_file:=" + savePath);
