@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
     QFontDatabase::addApplicationFont(":/qt/qml/projet_de_recherche/assets/fonts/Geist-Light.ttf");
 
     // Set Geist Sans as the default application font
-    app.setFont(QFont("Geist Sans"));
+    app.setFont(QFont("Geist"));
 
     // Set application icon (standard cross-platform way)
     app.setWindowIcon(QIcon(":/qt/qml/projet_de_recherche/assets/images/LogoSinFondo.png"));

@@ -3,14 +3,18 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Effects
 import QtQuick.Shapes
+import QtQuick.Dialogs
 
 ApplicationWindow {
     id: root
 
-    width: 1280
-    height: 720
-    minimumWidth: 900
-    minimumHeight: 600
+// En iOS, esto asegura que ocupe toda la pantalla real
+    width: Screen.width
+    height: Screen.height
+    
+    // Solo aplica mínimos si no estás en móvil
+    minimumWidth: Qt.platform.os === "ios" ? width : 900
+    minimumHeight: Qt.platform.os === "ios" ? height : 600
     visible: true
     title: "IMT - Drone Path Planner"
 
@@ -21,6 +25,22 @@ ApplicationWindow {
         interval: 2000
         repeat: false
         onTriggered: root.connectionState = 2
+    }
+
+    FileDialog {
+        id: savePathDialog
+        title: "Exporter l'itinéraire"
+        fileMode: FileDialog.SaveFile
+        nameFilters: ["Fichiers JSON (*.json)"]
+        defaultSuffix: "json"
+        currentFile: "file:drone_path.json"
+        onAccepted: {
+            if (mapView.exportPathToJson(selectedFile)) {
+                console.log("[UI] Succès : Itinéraire exporté.");
+            } else {
+                console.log("[UI] Erreur : Échec de l'exportation.");
+            }
+        }
     }
 
     header: ToolBar {
@@ -61,12 +81,12 @@ ApplicationWindow {
                     Label {
                         text: "Drone Path Planner"
                         color: "#000000"
-                        font { family: "Geist Sans"; pixelSize: 18; weight: Font.DemiBold; letterSpacing: -0.5}
+                        font { family: "Geist"; pixelSize: 18; weight: Font.DemiBold; letterSpacing: -0.5}
                     }
                     Label {
                         text: "Planificateur de couverture"
                         color: "#5f6368"
-                        font { family: "Geist Sans"; pixelSize: 12; letterSpacing: -0.5 }
+                        font { family: "Geist"; pixelSize: 12; letterSpacing: -0.5 }
                     }
                 }
             }
@@ -99,7 +119,7 @@ ApplicationWindow {
                         Label {
                             text: mapView.userPosition.isValid ? "Ma Position: " + mapView.userPosition.latitude.toFixed(5) + ", " + mapView.userPosition.longitude.toFixed(5) : "Recherche GPS..."
                             color: "#4a5568"
-                            font { family: "Geist Sans"; pixelSize: 13; letterSpacing: -0.2 }
+                            font { family: "Geist"; pixelSize: 13; letterSpacing: -0.2 }
                             anchors.verticalCenter: parent.verticalCenter
                         }
                     }
@@ -137,7 +157,7 @@ ApplicationWindow {
                         Text {
                             text: root.connectionState === 2 ? "Connecté" : (root.connectionState === 1 ? "Connexion en cours..." : "Déconnecté")
                             color: root.connectionState === 2 ? "#00a651" : (root.connectionState === 1 ? "#f59e0b" : "#51565A")
-                            font { family: "Geist Sans"; pixelSize: 13; bold: root.connectionState === 2; letterSpacing: -0.2}
+                            font { family: "Geist"; pixelSize: 13; bold: root.connectionState === 2; letterSpacing: -0.2}
                             anchors.verticalCenter: parent.verticalCenter
                         }
                         
@@ -165,7 +185,7 @@ ApplicationWindow {
                             Text {
                                 text: "85%"
                                 color: "#00a651"
-                                font { family: "Geist Sans"; pixelSize: 13; bold: true }
+                                font { family: "Geist"; pixelSize: 13; bold: true }
                                 anchors.verticalCenter: parent.verticalCenter
                             }
                         }
@@ -177,7 +197,7 @@ ApplicationWindow {
                     text: root.connectionState === 2 ? "Aucune mission active" : (mapView.drawingMode ? "Dessin de la mission..." : "Aucune zone sélectionnée")
                     color: "#5f6368"
                     anchors.verticalCenter: parent.verticalCenter
-                    font { family: "Geist Sans"; pixelSize: 14; letterSpacing: -0.5}
+                    font { family: "Geist"; pixelSize: 14; letterSpacing: -0.5}
                 }
 
                 // Icono de información con Hover
@@ -1100,64 +1120,38 @@ ApplicationWindow {
                                                     text: "Exporter au drone"
                                                     font.pixelSize: 13
                                                     font.letterSpacing: -0.2
+                                                    onTriggered: savePathDialog.open()
                                                 }
                                             }
                                         }
                                         Button {
                                             id: clearMissionBtn
-                                            implicitWidth: 36
-                                            implicitHeight: 36
+                                            implicitWidth: 44
+                                            implicitHeight: 44
 
                                             background: Rectangle {
                                                 radius: 8
-                                                color: clearMissionBtn.pressed ? "#b71c1c" : "#d32f2f" // Un rojo más oscuro al presionar
+                                                color: clearMissionBtn.pressed ? "#b71c1c" : "#d32f2f"
                                             }
 
-                                            Button {
-                                                implicitWidth: 44
-                                                implicitHeight: 44
-
-                                                background: Rectangle {
-                                                    radius: 8
-                                                    color: clearMissionBtn.pressed ? "#b71c1c" : "#d32f2f"
-                                                }
-
-                                                contentItem: Item {
-                                                    // Este contenedor ocupa los 44x44 y nos permite centrar la imagen pequeña dentro
-                                                    anchors.fill: parent
-
-                                                    Image {
-                                                        source: "/qt/qml/projet_de_recherche/assets/icons/delete_icon_white.svg"
-
-                                                        // Fuerza el tamaño visual aquí (ajusta 16 a lo que prefieras)
-                                                        width: 16
-                                                        height: 16
-
-                                                        // Renderiza el SVG a este tamaño exacto para que no se vea borroso
-                                                        sourceSize: Qt.size(width, height)
-
-                                                        fillMode: Image.PreserveAspectFit
-                                                        anchors.centerIn: parent // Lo centra perfectamente en el botón
-
-                                                        layer.enabled: true
-                                                        layer.effect: MultiEffect {
-                                                            colorization: 1.0
-                                                            colorizationColor: "#ffffff"
-                                                        }
+                                            contentItem: Item {
+                                                anchors.fill: parent
+                                                Image {
+                                                    source: "/qt/qml/projet_de_recherche/assets/icons/delete_icon_white.svg"
+                                                    width: 16
+                                                    height: 16
+                                                    sourceSize: Qt.size(width, height)
+                                                    fillMode: Image.PreserveAspectFit
+                                                    anchors.centerIn: parent
+                                                    layer.enabled: true
+                                                    layer.effect: MultiEffect {
+                                                        colorization: 1.0
+                                                        colorizationColor: "#ffffff"
                                                     }
                                                 }
-                                                onClicked: {
-                                                    mapView.vertices = []
-                                                    mapView.vertexModel.clear()
-                                                    mapView.updatePolygonPaths()
-                                                    exportMisionBtn.enabled = false
-                                                }
                                             }
-
                                             onClicked: {
-                                                mapView.vertices = []
-                                                mapView.vertexModel.clear()
-                                                mapView.updatePolygonPaths()
+                                                mapView.resetDrawingState()
                                                 exportMisionBtn.enabled = false
                                             }
                                         }
@@ -1192,10 +1186,36 @@ ApplicationWindow {
                                     color: addRestrBtn.pressed ? "#e2e8f0" : (addRestrBtn.hovered ? "#edf2f7" : "#f8fafd")
                                     border.color: "#e2e8f0"; border.width: 1
                                 }
-                                contentItem: RowLayout {
-                                    anchors.centerIn: parent; spacing: 4
-                                    Label { text: "+"; color: "#1a2744"; font.pixelSize: 16 }
-                                    Label { text: "Ajouter"; color: "#1a2744"; font.pixelSize: 13; font.bold: true; font.letterSpacing: -0.5 }
+                                contentItem: Item {
+                                    // Esto asegura que el contenedor mida exactamente lo que miden sus hijos
+                                    implicitWidth: rowAjouter.width
+                                    implicitHeight: rowAjouter.height
+
+                                    Row {
+                                        id: rowAjouter
+                                        anchors.centerIn: parent
+                                        spacing: 2 // <--- Casi pegados. Si quieres que se toquen, pon 0.
+
+                                        Label {
+                                            text: "+"
+                                            color: "#1a2744"
+                                            font.pixelSize: 16
+                                            font.bold: true // Le damos un poco de peso para que combine con el texto
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            // Ajuste fino: a veces el "+" tiene espacio a la derecha por la fuente
+                                            rightPadding: 0
+                                        }
+
+                                        Label {
+                                            text: "Ajouter"
+                                            color: "#1a2744"
+                                            font.pixelSize: 13
+                                            font.bold: true
+                                            font.letterSpacing: -0.5
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            leftPadding: 0
+                                        }
+                                    }
                                 }
                                 onClicked: {
                                     mapView.finalizeCurrentRestriction()
@@ -1564,7 +1584,7 @@ ApplicationWindow {
                                         font.pixelSize: 16
                                         font.bold: true
                                         color: "#1a2744"
-                                        font.family: "Geist Sans"
+                                        font.family: "Geist"
                                     }
                                 }
                             }
@@ -1594,7 +1614,7 @@ ApplicationWindow {
                                             return p > 1000 ? (p/1000).toFixed(2) + " km" : p.toFixed(2) + " m"
                                         }
                                         anchors.horizontalCenter: parent.horizontalCenter
-                                        font.pixelSize: 16; font.bold: true; color: "#1a2744"; font.family: "Geist Sans"
+                                        font.pixelSize: 16; font.bold: true; color: "#1a2744"; font.family: "Geist"
                                     }
                                 }
                             }
@@ -1624,7 +1644,7 @@ ApplicationWindow {
                                             return d > 1000 ? (d/1000).toFixed(2) + " km" : d.toFixed(2) + " m";
                                         }
                                         anchors.horizontalCenter: parent.horizontalCenter
-                                        font.pixelSize: 16; font.bold: true; color: "#1a2744"; font.family: "Geist Sans"
+                                        font.pixelSize: 16; font.bold: true; color: "#1a2744"; font.family: "Geist"
                                     }
                                 }
                             }
@@ -1654,7 +1674,7 @@ ApplicationWindow {
                                             return t > 60 ? (t/60).toFixed(1) + " min" : t.toFixed(0) + " s";
                                         }
                                         anchors.horizontalCenter: parent.horizontalCenter
-                                        font.pixelSize: 16; font.bold: true; color: "#1a2744"; font.family: "Geist Sans"
+                                        font.pixelSize: 16; font.bold: true; color: "#1a2744"; font.family: "Geist"
                                     }
                                 }
                             }
