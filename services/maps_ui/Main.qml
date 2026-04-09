@@ -43,6 +43,38 @@ ApplicationWindow {
         }
     }
 
+    FileDialog {
+        id: reportPathDialog
+        title: "Exporter le rapport PDF"
+        fileMode: FileDialog.SaveFile
+        nameFilters: ["Fichiers PDF (*.pdf)"]
+        defaultSuffix: "pdf"
+        currentFile: "file:rapport_mission.pdf"
+        onAccepted: {
+            if (mapView.exportReportToPdf(selectedFile)) {
+                console.log("[UI] Succès : Rapport PDF généré.");
+            } else {
+                console.log("[UI] Erreur : Échec de la génération du rapport.");
+            }
+        }
+    }
+
+    FileDialog {
+        id: saveCsvDialog
+        title: "Exporter au format CSV"
+        fileMode: FileDialog.SaveFile
+        nameFilters: ["Fichiers CSV (*.csv)"]
+        defaultSuffix: "csv"
+        currentFile: "file:points_mission.csv"
+        onAccepted: {
+            if (mapView.exportPathToCsv(selectedFile)) {
+                console.log("[UI] Succès : CSV exporté.");
+            } else {
+                console.log("[UI] Erreur : Échec CSV.");
+            }
+        }
+    }
+
     header: ToolBar {
         implicitHeight: 50
 
@@ -1110,11 +1142,13 @@ ApplicationWindow {
                                                     text: "Exporter CSV"
                                                     font.pixelSize: 13
                                                     font.letterSpacing: -0.2
+                                                    onTriggered: saveCsvDialog.open()
                                                 }
                                                 MenuItem {
-                                                    text: "Exporter rapport" 
+                                                    text: "Exporter rapport PDF" 
                                                     font.pixelSize: 13
                                                     font.letterSpacing: -0.2
+                                                    onTriggered: reportPathDialog.open()
                                                 }
                                                 MenuItem {
                                                     text: "Exporter au drone"

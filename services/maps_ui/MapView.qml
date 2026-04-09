@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 import QtLocation
 import QtPositioning
 import QtQuick.Effects
@@ -34,6 +35,14 @@ Item {
 
     function exportPathToJson(filePath) {
         return pathfindingService.savePathToJson(filePath);
+    }
+
+    function exportPathToCsv(filePath) {
+        return pathfindingService.savePathToCsv(filePath);
+    }
+
+    function exportReportToPdf(filePath) {
+        return pathfindingService.generatePdfReport(filePath);
     }
 
     Timer {
@@ -468,8 +477,13 @@ Item {
             enabled: !root.drawingMode && !root.drawingRestrictions
             target: null
             onActiveChanged: if (active) {
-                // Handle pinch zoom if needed, but wheel and basic interactions are usually enough
+                initialZoom = map.zoomLevel
             }
+            onScaleChanged: {
+                var delta = Math.log2(scale)
+                map.zoomLevel = Math.min(Math.max(initialZoom + delta, map.minimumZoomLevel), map.maximumZoomLevel)
+            }
+            property real initialZoom: 16
         }
 
         WheelHandler {
@@ -726,6 +740,55 @@ Item {
                 }
             }
         }
+
+        // Simulation Marker (The "Bolita")
+        MapQuickItem {
+            id: simMarker
+            coordinate: QtPositioning.coordinate(0, 0)
+            visible: root.generatedPath.length > 0
+            anchorPoint.x: 15
+            anchorPoint.y: 15
+            z: 30
+            sourceItem: Item {
+                width: 30; height: 30
+                
+                // Outer circle (Pulse effect)
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: parent.width; height: parent.height; radius: 15
+                    color: "#00E5FF"; opacity: 0.3
+                    scale: root.isSimulating ? pulseAnimSim.scaleValue : 1.0
+
+                    SequentialAnimation on scale {
+                        id: pulseAnimSim
+                        property real scaleValue: scale
+                        loops: Animation.Infinite; running: root.isSimulating
+                        NumberAnimation { from: 1; to: 1.5; duration: 1000; easing.type: Easing.OutQuart }
+                        NumberAnimation { from: 1.5; to: 1; duration: 0 }
+                    }
+                }
+
+                // Inner Bolita
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: 14; height: 14; radius: 7
+                    color: "#00E5FF"; border.color: "white"; border.width: 2
+                    
+                    layer.enabled: true
+                    layer.effect: MultiEffect {
+                        shadowEnabled: true; shadowColor: "#4000E5FF"; shadowBlur: 0.5
+                    }
+
+                    Image {
+                        source: "/qt/qml/projet_de_recherche/assets/icons/drone_icon.svg"
+                        anchors.fill: parent
+                        anchors.margins: 2
+                        sourceSize: Qt.size(10, 10)
+                        visible: false // Use as source for colorization
+                    }
+                }
+            }
+        }
     }
 
     Timer {
@@ -878,7 +941,6 @@ Item {
             }
         }
 
-
         // Zoom buttons
         Column {
             anchors.horizontalCenter: parent.horizontalCenter
@@ -891,6 +953,7 @@ Item {
                     radius: 16
                     color: zoomInBtn.pressed ? "#f0f0f0" : (zoomInBtn.hovered ? "#f8f9fc" : "white")
                     border.color: "#dde1ec"
+                    border.width: 1
                 }
             }
             Button { 
@@ -901,10 +964,162 @@ Item {
                     radius: 16
                     color: zoomOutBtn.pressed ? "#f0f0f0" : (zoomOutBtn.hovered ? "#f8f9fc" : "white")
                     border.color: "#dde1ec"
+                    border.width: 1
                 }
             }
         }
+    }
 
+    // --- OVERLAY: SIMULATION CONTROLS ---
+    Rectangle {
+        id: simControls
+        anchors.left: parent.left
+        anchors.bottom: parent.bottom
+        anchors.margins: 16
+        width: 260
+        height: 110
+        radius: 12
+        color: Qt.rgba(1, 1, 1, 0.9)
+        border.color: "#dde1ec"
+        border.width: 1
+        visible: root.generatedPath.length > 0
+        z: 100
+
+        layer.enabled: true
+        layer.effect: MultiEffect {
+            shadowEnabled: true; shadowColor: "#20000000"; shadowBlur: 0.2; shadowVerticalOffset: 2
+        }
+
+        Column {
+            anchors.fill: parent
+            anchors.margins: 12
+            spacing: 8
+
+            RowLayout {
+                width: parent.width
+                spacing: 8
+                
+                Rectangle {
+                    width: 32; height: 32; radius: 16; color: "#e6f4ea"
+                    Image {
+                        anchors.centerIn: parent
+                        source: "/qt/qml/projet_de_recherche/assets/icons/drone_icon.svg"
+                        sourceSize: Qt.size(16, 16)
+                        layer.enabled: true
+                        layer.effect: MultiEffect { colorization: 1.0; colorizationColor: "#00a651" }
+                    }
+                }
+
+                Column {
+                    spacing: 0
+                    Label {
+                        text: "Simulation de vol"
+                        font.pixelSize: 13; font.bold: true; color: "#1a2744"
+                    }
+                    Label {
+                        text: root.isSimulating ? "En cours..." : "Prêt pour le test"
+                        font.pixelSize: 11; color: "#64748b"
+                    }
+                }
+                
+                Item { Layout.fillWidth: true }
+                
+                Button {
+                    id: closeSimBtn
+                    width: 24; height: 24; flat: true
+                    text: "×"
+                    onClicked: {
+                        root.isSimulating = false;
+                        root.generatedPath = []; // Hide simulation by clearing path if temporary
+                    }
+                    contentItem: Text { text: "×"; font.pixelSize: 18; color: "#94a3b8"; horizontalAlignment: Text.AlignHCenter }
+                    background: null
+                }
+            }
+
+            RowLayout {
+                width: parent.width
+                spacing: 12
+
+                Button {
+                    id: playBtn
+                    Layout.preferredWidth: 36
+                    Layout.preferredHeight: 36
+                    Layout.alignment: Qt.AlignVCenter
+                    text: root.isSimulating ? "⏸" : "▶"
+                    onClicked: root.isSimulating = !root.isSimulating
+                    background: Rectangle {
+                        radius: 18
+                        color: root.isSimulating ? "#f8fafd" : "#00a651"
+                        border.color: root.isSimulating ? "#dde1ec" : "#00a651"
+                    }
+                    contentItem: Text { 
+                        text: root.isSimulating ? "⏸" : "▶"
+                        color: root.isSimulating ? "#1a2744" : "white"
+                        font.pixelSize: 14; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
+                    }
+                }
+
+                Button {
+                    id: stopBtn
+                    Layout.preferredWidth: 36
+                    Layout.preferredHeight: 36
+                    Layout.alignment: Qt.AlignVCenter
+                    text: "■"
+                    onClicked: {
+                        root.isSimulating = false
+                        root.simPointIndex = 0
+                        root.simInterpolation = 0.0
+                        root.updateSimMarker()
+                    }
+                    background: Rectangle {
+                        radius: 18
+                        color: "white"; border.color: "#dde1ec"
+                    }
+                    contentItem: Text { 
+                        text: "■"; color: "#e53935"; font.pixelSize: 14; 
+                        horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
+                    }
+                }
+
+                Column {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignVCenter
+                    spacing: 2
+                    
+                    Row {
+                        width: parent.width
+                        Label { text: "Vitesse: "; font.pixelSize: 10; color: "#64748b" }
+                        Label { text: root.simSpeed.toFixed(1) + "x"; font.pixelSize: 10; font.bold: true; color: "#1a2744" }
+                    }
+                    
+                    Slider {
+                        id: speedSlider
+                        width: parent.width
+                        from: 0.5; to: 10.0
+                        value: root.simSpeed
+                        onValueChanged: root.simSpeed = value
+                        
+                        background: Rectangle {
+                            x: speedSlider.leftPadding
+                            y: speedSlider.topPadding + speedSlider.availableHeight / 2 - height / 2
+                            implicitWidth: 200; implicitHeight: 4; width: speedSlider.availableWidth; height: implicitHeight
+                            radius: 2; color: "#edf2f7"
+                            Rectangle {
+                                width: speedSlider.visualPosition * parent.width; height: parent.height
+                                color: "#00a651"; radius: 2
+                            }
+                        }
+                        handle: Rectangle {
+                            x: speedSlider.leftPadding + speedSlider.visualPosition * (speedSlider.availableWidth - width)
+                            y: speedSlider.topPadding + speedSlider.availableHeight / 2 - height / 2
+                            implicitWidth: 14; implicitHeight: 14; radius: 7
+                            color: "white"; border.color: "#00a651"; border.width: 2
+                        }
+                    }
+                }
+            }
+        }
     }
 
     function updateGeneratedPathVisuals() {
@@ -922,6 +1137,12 @@ Item {
         if (pathCoords.length > 0) {
             startMarker.coordinate = pathCoords[0];
             endMarker.coordinate = pathCoords[pathCoords.length - 1];
+            
+            // Reset simulation when new path arrives
+            root.isSimulating = false;
+            root.simPointIndex = 0;
+            root.simInterpolation = 0.0;
+            updateSimMarker();
         }
         console.log("[JS] Itineraire affiche: " + pathCoords.length + " points.");
     }

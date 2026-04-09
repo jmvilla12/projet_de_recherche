@@ -339,18 +339,96 @@ QList<Pathfinding::GeoCoord> Pathfinding::computeGrid(const QPainterPath& operab
 }
 
 QList<Pathfinding::GeoCoord> Pathfinding::computeSubdivision(const QPainterPath& operableArea, const QList<QPolygonF>& restrPolys, const GeoCoord& refCoord) const {
-    // Actually using Grid algorithm here for simplification, but with subdivision orientation
-    return computeGrid(operableArea, restrPolys, 90.0, refCoord); 
+    QList<GeoCoord> finalPath;
+    if (operableArea.isEmpty()) return finalPath;
+
+    // 1. Identify all critical X and Y bounds (Mission + Restrictions)
+    QSet<double> xCuts, yCuts;
+    QRectF mBounds = operableArea.boundingRect();
+    xCuts << mBounds.left() << mBounds.right();
+    yCuts << mBounds.top() << mBounds.bottom();
+
+    for (const QPolygonF& rp : restrPolys) {
+        QRectF rb = rp.boundingRect();
+        // Only include cuts that are inside the mission area to avoid unnecessary complexity
+        if (rb.left() > mBounds.left() && rb.left() < mBounds.right()) xCuts << rb.left();
+        if (rb.right() > mBounds.left() && rb.right() < mBounds.right()) xCuts << rb.right();
+        if (rb.top() > mBounds.top() && rb.top() < mBounds.bottom()) yCuts << rb.top();
+        if (rb.bottom() > mBounds.top() && rb.bottom() < mBounds.bottom()) yCuts << rb.bottom();
+    }
+
+    QList<double> sortedX = xCuts.values(); std::sort(sortedX.begin(), sortedX.end());
+    QList<double> sortedY = yCuts.values(); std::sort(sortedY.begin(), sortedY.end());
+
+    // 2. Union of all restrictions for collision checking
+    QPainterPath restrUnion;
+    for (const QPolygonF& rp : restrPolys) restrUnion.addPolygon(rp);
+
+    // 3. Process each atomic rectangle
+    bool hasLast = false;
+    QPointF lastPoint;
+    bool leftToRight = true;
+
+    for (int j = 0; j + 1 < sortedY.size(); ++j) {
+        double y1 = sortedY[j], y2 = sortedY[j+1];
+        QList<int> xIndices; 
+        for (int i = 0; i + 1 < sortedX.size(); ++i) xIndices << i;
+        if (!leftToRight) std::reverse(xIndices.begin(), xIndices.end());
+
+        for (int i : xIndices) {
+            double x1 = sortedX[i], x2 = sortedX[i+1];
+            QRectF rect(x1, y1, x2 - x1, y2 - y1);
+            QPointF center = rect.center();
+
+            // A rectangle is safe if its center is inside mission area AND NOT inside any restriction
+            // (Since it's built from BBox edges, this is a good approximation for subdivision)
+            if (operableArea.contains(center) && !restrUnion.contains(center)) {
+                // Generate a grid local to this rectangle
+                QPainterPath rectPath; rectPath.addRect(rect);
+                // We use computeGrid but for this specific local rectangle, with 0 degree sweep
+                QList<GeoCoord> subGrid = computeGrid(rectPath, restrPolys, 0.0, refCoord);
+                
+                if (!subGrid.isEmpty()) {
+                    // Connect to previous point if needed
+                    if (hasLast) {
+                        GeoCoord startGeo = subGrid.first();
+                        Point2D startLocal = geoToLocal(refCoord, startGeo);
+                        QList<Point2D> transit = findSafePath(lastPoint, QPointF(startLocal.x, startLocal.y), restrUnion, restrPolys);
+                        for (const Point2D& wp : transit) finalPath << localToGeo(refCoord, wp);
+                    }
+                    
+                    finalPath.append(subGrid);
+                    GeoCoord endGeo = subGrid.last();
+                    Point2D endLocal = geoToLocal(refCoord, endGeo);
+                    lastPoint = QPointF(endLocal.x, endLocal.y);
+                    hasLast = true;
+                }
+            }
+        }
+        leftToRight = !leftToRight;
+    }
+
+    qDebug() << "[SUBDIVISION] Generated subdivision path with" << finalPath.size() << "points.";
+    return finalPath;
 }
 
 bool Pathfinding::savePathToJson(const QString& filePath) const {
     QString actualPath = filePath;
     if (actualPath.startsWith("file://")) actualPath = QUrl(filePath).toLocalFile();
 
+    QJsonObject root;
     QJsonArray array;
-    for (const QVariant& v : m_lastPath) array.append(QJsonObject::fromVariantMap(v.toMap()));
+    for (const QVariant& v : m_lastPath) {
+        QVariantMap map = v.toMap();
+        QJsonObject obj;
+        obj["lat"] = map["latitude"].toDouble();
+        obj["lon"] = map["longitude"].toDouble();
+        obj["alt"] = 0.0;
+        array.append(obj);
+    }
+    root["checkpoints"] = array;
 
-    QJsonDocument doc(array);
+    QJsonDocument doc(root);
     QFile file(actualPath);
     if (file.open(QIODevice::WriteOnly)) {
         file.write(doc.toJson());
@@ -360,6 +438,119 @@ bool Pathfinding::savePathToJson(const QString& filePath) const {
     }
     qDebug() << "[JSON] FAILED to export to:" << actualPath;
     return false;
+}
+
+#include <QTextStream>
+
+bool Pathfinding::savePathToCsv(const QString& filePath) const {
+    QString actualPath = filePath;
+    if (actualPath.startsWith("file://")) actualPath = QUrl(filePath).toLocalFile();
+
+    QFile file(actualPath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        qDebug() << "[CSV] FAILED to export to:" << actualPath;
+        return false;
+    }
+
+    QTextStream out(&file);
+    out << "Latitude,Longitude,Altitude\n";
+    for (const QVariant& v : m_lastPath) {
+        QVariantMap m = v.toMap();
+        out << QString::number(m["latitude"].toDouble(), 'f', 8) << ","
+            << QString::number(m["longitude"].toDouble(), 'f', 8) << ",0\n";
+    }
+    file.close();
+    qDebug() << "[CSV] Path exported to:" << actualPath;
+    return true;
+}
+
+#include <QPdfWriter>
+#include <QPainter>
+#include <QDateTime>
+
+bool Pathfinding::generatePdfReport(const QString& filePath) const {
+    QString actualPath = filePath;
+    if (actualPath.startsWith("file://")) actualPath = QUrl(filePath).toLocalFile();
+
+    QPdfWriter pdfWriter(actualPath);
+    pdfWriter.setPageSize(QPageSize(QPageSize::A4));
+    pdfWriter.setPageMargins(QMarginsF(20, 20, 20, 20)); // Page margins in mm
+    pdfWriter.setTitle("Rapport de Mission de Vol");
+    pdfWriter.setCreator("Projet de Recherche Drone");
+
+    const int res = pdfWriter.resolution();
+    const double resScale = res / 72.0; // Points to Dots conversion factor
+
+    QPainter painter(&pdfWriter);
+    if (!painter.isActive()) return false;
+
+    // Use scaling to work in Points (1/72 inch)
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHint(QPainter::TextAntialiasing);
+    
+    int currentY = 50; // Points from top
+    int marginX = 50;  // Points from left
+
+    auto writeLine = [&](const QString& text, int size, bool bold = false, int xOffset = 0) {
+        QFont font("Helvetica", size);
+        font.setBold(bold);
+        painter.setFont(font);
+        
+        QFontMetrics fm(font);
+        int h = fm.height();
+        
+        // Final position in dots (since we scale the painter, we can just use points)
+        // Wait, if we scale the painter, drawText(x, y) coordinates are in points too.
+        painter.drawText(marginX + xOffset, currentY + fm.ascent(), text);
+        currentY += h + 4; // Add a small leading (4 points)
+    };
+
+    painter.scale(resScale, resScale); // Now 1 unit = 1 point
+
+    // Header Section
+    writeLine("RAPPORT DE MISSION DE VOL", 24, true);
+    writeLine("Généré le : " + QDateTime::currentDateTime().toString("dd/MM/yyyy HH:mm"), 11, false);
+    
+    currentY += 10;
+    painter.setPen(QPen(Qt::black, 1.5));
+    painter.drawLine(marginX, currentY, 540, currentY); // ~190mm wide in points
+    currentY += 25;
+
+    // Statistics Section
+    writeLine("Statistiques de vol", 16, true);
+    currentY += 5;
+    writeLine("Distance totale   : " + QString::number(m_bestDistance, 'f', 2) + " m", 12, false, 15);
+    writeLine("Temps estimé      : " + QString::number(m_bestTime, 'f', 2) + " s", 12, false, 15);
+    writeLine("Algorithme utilisé : " + m_bestAlgorithm, 12, false, 15);
+    writeLine("Points de passage : " + QString::number(m_lastPath.size()), 12, false, 15);
+    currentY += 20;
+
+    // Waypoints Section
+    writeLine("Liste des points de passage (Checkpoints)", 16, true);
+    currentY += 5;
+    
+    // We can fit two columns of waypoints if we want, but let's stick to one clear list first
+    int i = 0;
+    int maxPoints = qMin(m_lastPath.size(), 40);
+    for (i = 0; i < maxPoints; ++i) {
+        QVariantMap p = m_lastPath.at(i).toMap();
+        QString line = QString("%1. Latitude: %2 | Longitude: %3")
+                        .arg(i + 1, 2)
+                        .arg(p["latitude"].toDouble(), 0, 'f', 7)
+                        .arg(p["longitude"].toDouble(), 0, 'f', 7);
+        writeLine(line, 9, false, 15);
+        
+        // Prevent overflow to next page for now (simple report)
+        if (currentY > 750) break; 
+    }
+    
+    if (m_lastPath.size() > i) {
+        writeLine("... (et " + QString::number(m_lastPath.size() - i) + " autres points)", 9, false, 15);
+    }
+
+    painter.end();
+    qDebug() << "[PDF] Rapport généré et organisé :" << actualPath;
+    return true;
 }
 
 // Main execution
@@ -387,6 +578,7 @@ void Pathfinding::calculateBestRoute() {
     evaluate("Grille Horizontale", computeGrid(operableArea, restrPolys, 0.0, refCoord));
     evaluate("Grille Verticale",   computeGrid(operableArea, restrPolys, 90.0, refCoord));
     evaluate("Grille Diagonale",   computeGrid(operableArea, restrPolys, 45.0, refCoord));
+    evaluate("Subdivision (Local)", computeSubdivision(operableArea, restrPolys, refCoord));
     
     if (results.isEmpty()) {
         qDebug() << "(!) Erreur : Aucun itinéraire n'a pu être généré.";
@@ -399,10 +591,14 @@ void Pathfinding::calculateBestRoute() {
         if (r.dist > 1.0 && (best.dist == 0 || r.dist < best.dist)) best = r;
     }
 
+    m_bestDistance = best.dist;
+    m_bestTime = best.time;
+    m_bestAlgorithm = best.name;
+
     qDebug() << "=========================================";
-    qDebug() << "ALGORITHME CHOISI :" << best.name;
-    qDebug() << "DISTANCE TOTALE   :" << QString::number(best.dist, 'f', 2) << "m";
-    qDebug() << "TEMPS ESTIMÉ      :" << QString::number(best.time, 'f', 2) << "s";
+    qDebug() << "ALGORITHME CHOISI :" << m_bestAlgorithm;
+    qDebug() << "DISTANCE TOTALE   :" << QString::number(m_bestDistance, 'f', 2) << "m";
+    qDebug() << "TEMPS ESTIMÉ      :" << QString::number(m_bestTime, 'f', 2) << "s";
     qDebug() << "NOMBRE DE POINTS  :" << best.path.size();
     qDebug() << "=========================================";
 
