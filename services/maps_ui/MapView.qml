@@ -688,7 +688,7 @@ Item {
         MapPolyline {
             id: finalPathLine
             line.width: 2.0
-            line.color: "#00E5FF" // Bright cyan — visible on any map background
+            line.color: "#000000" // Black for high contrast
             opacity: 0.85
             z: 19
         }

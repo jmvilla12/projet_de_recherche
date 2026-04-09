@@ -84,7 +84,7 @@ ApplicationWindow {
                         font { family: "Geist"; pixelSize: 18; weight: Font.DemiBold; letterSpacing: -0.5}
                     }
                     Label {
-                        text: "Planificateur de couverture"
+                        text: mapView.generatedPath.length > 0 ? "Itinéraire généré" : "Planificateur de couverture"
                         color: "#5f6368"
                         font { family: "Geist"; pixelSize: 12; letterSpacing: -0.5 }
                     }
@@ -129,7 +129,7 @@ ApplicationWindow {
                 Rectangle {
                     width: connRow.width + 20
                     height: 28
-                    color: root.connectionState === 2 ? "#e6f4ea" : (root.connectionState === 1 ? "#fff3e0" : "#E6ECF1")
+                    color: "#E6ECF1"
                     radius: 14
                     anchors.verticalCenter: parent.verticalCenter
 
@@ -139,25 +139,21 @@ ApplicationWindow {
                         spacing: 8
                         
                         Image {
-                            source: root.connectionState === 2 ? "/qt/qml/projet_de_recherche/assets/icons/wifi_off.svg" : 
-                                   (root.connectionState === 1 ? "/qt/qml/projet_de_recherche/assets/icons/circulo_dibujar.svg" : "/qt/qml/projet_de_recherche/assets/icons/wifi_off.svg")
+                            source: "/qt/qml/projet_de_recherche/assets/icons/drone_icon.svg"
                             sourceSize.width: 14
                             sourceSize.height: 14
                             anchors.verticalCenter: parent.verticalCenter
                             layer.enabled: true
                             layer.effect: MultiEffect {
                                 colorization: 1.0
-                                colorizationColor: root.connectionState === 2 ? "#00a651" : (root.connectionState === 1 ? "#f59e0b" : "#51565A")
-                            }
-                            RotationAnimation on rotation {
-                                loops: Animation.Infinite; from: 0; to: 360; duration: 1000; running: root.connectionState === 1
+                                colorizationColor: "#51565A"
                             }
                         }
 
                         Text {
-                            text: root.connectionState === 2 ? "Connecté" : (root.connectionState === 1 ? "Connexion en cours..." : "Déconnecté")
-                            color: root.connectionState === 2 ? "#00a651" : (root.connectionState === 1 ? "#f59e0b" : "#51565A")
-                            font { family: "Geist"; pixelSize: 13; bold: root.connectionState === 2; letterSpacing: -0.2}
+                            text: "Institut Mines-Télécom - Nord Europe"
+                            color: "#51565A"
+                            font { family: "Geist"; pixelSize: 13; bold: true; letterSpacing: -0.2}
                             anchors.verticalCenter: parent.verticalCenter
                         }
                         
@@ -194,7 +190,9 @@ ApplicationWindow {
 
                 // Texto de estado
                 Label {
-                    text: root.connectionState === 2 ? "Aucune mission active" : (mapView.drawingMode ? "Dessin de la mission..." : "Aucune zone sélectionnée")
+                    text: mapView.generatedPath.length > 0 ? "Itinéraire généré" : 
+                          (mapView.drawingMode ? "Dessin de la mission..." : 
+                          (mapView.drawingRestrictions ? "Dessin des restrictions..." : "Aucune zone sélectionnée"))
                     color: "#5f6368"
                     anchors.verticalCenter: parent.verticalCenter
                     font { family: "Geist"; pixelSize: 14; letterSpacing: -0.5}
@@ -320,10 +318,15 @@ ApplicationWindow {
                         }
                     }
 
-                    Rectangle { width: parent.width; height: 1; color: "#dde1ec" }
+                    Rectangle { 
+                        visible: false
+                        width: parent.width; height: 1; color: "#dde1ec" 
+                    }
 
                     Rectangle {
                         id: droneStatusCard
+                        visible: false
+                        enabled: false
                         width: parent.width
                         implicitHeight: mainStatusLayout.implicitHeight + 24
                         color: "white"
