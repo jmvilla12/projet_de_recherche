@@ -37,12 +37,8 @@ Item {
         return pathfindingService.savePathToJson(filePath);
     }
 
-    function exportPathToCsv(filePath) {
-        return pathfindingService.savePathToCsv(filePath);
-    }
-
-    function exportReportToPdf(filePath) {
-        return pathfindingService.generatePdfReport(filePath);
+    function runSimulation() {
+        pathfindingService.runVrxSimulation();
     }
 
     Timer {
@@ -461,8 +457,8 @@ Item {
             PluginParameter { name: "osm.mapping.providersrepository.disabled"; value: "true" }
         }
 
-        center: QtPositioning.coordinate(-33.7218295, 150.6682616)
-        zoomLevel: 16
+        center: QtPositioning.coordinate(-33.724223, 150.679736)
+        zoomLevel: 18
 
         // Robust Cross-Platform Interaction (Mouse + Touch)
         DragHandler {

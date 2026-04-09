@@ -29,7 +29,7 @@ ApplicationWindow {
 
     FileDialog {
         id: savePathDialog
-        title: "Exporter l'itinéraire"
+        title: "Exporter l'itinéraire (JSON)"
         fileMode: FileDialog.SaveFile
         nameFilters: ["Fichiers JSON (*.json)"]
         defaultSuffix: "json"
@@ -39,38 +39,6 @@ ApplicationWindow {
                 console.log("[UI] Succès : Itinéraire exporté.");
             } else {
                 console.log("[UI] Erreur : Échec de l'exportation.");
-            }
-        }
-    }
-
-    FileDialog {
-        id: reportPathDialog
-        title: "Exporter le rapport PDF"
-        fileMode: FileDialog.SaveFile
-        nameFilters: ["Fichiers PDF (*.pdf)"]
-        defaultSuffix: "pdf"
-        currentFile: "file:rapport_mission.pdf"
-        onAccepted: {
-            if (mapView.exportReportToPdf(selectedFile)) {
-                console.log("[UI] Succès : Rapport PDF généré.");
-            } else {
-                console.log("[UI] Erreur : Échec de la génération du rapport.");
-            }
-        }
-    }
-
-    FileDialog {
-        id: saveCsvDialog
-        title: "Exporter au format CSV"
-        fileMode: FileDialog.SaveFile
-        nameFilters: ["Fichiers CSV (*.csv)"]
-        defaultSuffix: "csv"
-        currentFile: "file:points_mission.csv"
-        onAccepted: {
-            if (mapView.exportPathToCsv(selectedFile)) {
-                console.log("[UI] Succès : CSV exporté.");
-            } else {
-                console.log("[UI] Erreur : Échec CSV.");
             }
         }
     }
@@ -1111,7 +1079,7 @@ ApplicationWindow {
                                                     }
 
                                                     Label {
-                                                        text: "Exporter"
+                                                        text: "LANCER SIMULATION"
                                                         font.bold: true
                                                         font.pixelSize: 14
                                                         font.letterSpacing: -0.5
@@ -1121,42 +1089,8 @@ ApplicationWindow {
                                                     }
                                                 }
                                             }
-                                            onClicked: exportMenu.open()
-
-                                            Menu {
-                                                id: exportMenu
-                                                y: exportMisionBtn.height
-                                                width: exportMisionBtn.width
-                                                
-                                                background: Rectangle {
-                                                    implicitWidth: 200
-                                                    implicitHeight: 40
-                                                    color: "white"
-                                                    border.color: "#e2e8f0"
-                                                    radius: 8
-                                                    layer.enabled: true
-                                                    layer.effect: MultiEffect { shadowEnabled: true; shadowColor: "#15000000"; shadowBlur: 0.1; shadowVerticalOffset: 2 }
-                                                }
-
-                                                MenuItem {
-                                                    text: "Exporter CSV"
-                                                    font.pixelSize: 13
-                                                    font.letterSpacing: -0.2
-                                                    onTriggered: saveCsvDialog.open()
-                                                }
-                                                MenuItem {
-                                                    text: "Exporter rapport PDF" 
-                                                    font.pixelSize: 13
-                                                    font.letterSpacing: -0.2
-                                                    onTriggered: reportPathDialog.open()
-                                                }
-                                                MenuItem {
-                                                    text: "Exporter au drone"
-                                                    font.pixelSize: 13
-                                                    font.letterSpacing: -0.2
-                                                    onTriggered: savePathDialog.open()
-                                                }
-                                            }
+                                            
+                                            onClicked: mapView.runSimulation()
                                         }
                                         Button {
                                             id: clearMissionBtn

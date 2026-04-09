@@ -18,8 +18,7 @@ class Pathfinding : public QObject {
     Q_INVOKABLE void setMissionData(const QVariantList& missionPoints, const QVariantList& restrictionZones);
     Q_INVOKABLE void calculateBestRoute();
     Q_INVOKABLE bool savePathToJson(const QString& filePath) const;
-    Q_INVOKABLE bool savePathToCsv(const QString& filePath) const;
-    Q_INVOKABLE bool generatePdfReport(const QString& filePath) const;
+    Q_INVOKABLE void runVrxSimulation();
 
 signals:
     void pathCalculated(const QVariantList& path, double distance, double time, const QString& bestAlgorithm);
@@ -28,9 +27,6 @@ private:
     QVariantList m_missionPoints;
     QVariantList m_restrictionZones;
     QVariantList m_lastPath; // cached for export
-    double m_bestDistance = 0.0;
-    double m_bestTime = 0.0;
-    QString m_bestAlgorithm;
 
     struct GeoCoord { double lat; double lng; };
     struct Point2D  { double x;   double y;   };
