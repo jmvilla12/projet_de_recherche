@@ -1042,11 +1042,11 @@ ApplicationWindow {
                                             id: exportMisionBtn
                                             Layout.fillWidth: true
                                             implicitHeight: 44
-                                            enabled: false
+                                            enabled: mapView.generatedPath.length > 0 && !pathfindingService.isSimLaunching
 
                                             background: Rectangle {
                                                 radius: 8
-                                                color: "white"
+                                                color: exportMisionBtn.pressed ? "#f8fafc" : "white"
                                                 border.color: exportMisionBtn.enabled ? "#e2e8f0" : "#f1f5f9"
                                                 border.width: 1
                                             }
@@ -1082,7 +1082,7 @@ ApplicationWindow {
                                                     }
 
                                                     Label {
-                                                        text: "LANCER SIMULATION"
+                                                        text: pathfindingService.isSimLaunching ? "LANCEMENT..." : "LANCER SIMULATION"
                                                         font.bold: true
                                                         font.pixelSize: 14
                                                         font.letterSpacing: -0.5

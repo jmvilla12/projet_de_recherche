@@ -12,6 +12,7 @@
 #include <QHash>
 #include <QThread>
 #include <QProcess>
+#include <QtConcurrent>
 
 const double SWEEP_WIDTH = 3; // Increased spacing for visibility during testing, can be reduced to 1.2 later
 const double DRONE_SPEED = 5.0;
@@ -250,6 +251,13 @@ QList<Pathfinding::Point2D> Pathfinding::findSafePath(const QPointF& p1, const Q
     return waypoints;
 }
 
+// Static helper for launching gnome-terminals
+static void launchCommand(const QString& cmd) {
+    QStringList args;
+    args << "--" << "bash" << "-c" << cmd + "; exec bash";
+    QProcess::startDetached("gnome-terminal", args);
+}
+
 // Algorithm: Explicit scanline grid that avoids restriction zones.
 QList<Pathfinding::GeoCoord> Pathfinding::computeGrid(const QPainterPath& operableArea, const QList<QPolygonF>& restrPolys, double angle, const GeoCoord& refCoord) const {
     QList<GeoCoord> finalPath;
@@ -450,6 +458,8 @@ bool Pathfinding::savePathToJson(const QString& filePath) const {
 }
 
 void Pathfinding::runVrxSimulation() {
+    if (m_isSimLaunching) return;
+
     QString savePath = "/home/javier/vrx_ws/src/gps_waypoints/checkpoints/sample_checkpoints1.json";
     qDebug() << "[SIM] Auto-sauvegarde vers :" << savePath;
     
@@ -458,43 +468,41 @@ void Pathfinding::runVrxSimulation() {
         return;
     }
 
-    auto launch = [](const QString& cmd) {
-        // We use gnome-terminal to ensure visibility and easy management of ROS2 nodes
-        QStringList args;
-        args << "--" << "bash" << "-c" << cmd + "; exec bash";
-        QProcess::startDetached("gnome-terminal", args);
-    };
-
     QString baseEnv = "cd ~/vrx_ws && source /opt/ros/jazzy/setup.bash && source install/setup.bash && ";
 
-    qDebug() << "[SIM] Lancement de la séquence ROS2...";
+    m_isSimLaunching = true;
+    emit isSimLaunchingChanged();
 
-    if (!m_isSimInitialized) {
-        // 1) Iniciar mundo (Gazebo)
-        launch(baseEnv + "ros2 launch vrx_gz vrx_environment.launch.py world:=sydney_regatta");
+    // Use QtConcurrent to launch simulation in background (prevents UI freeze)
+    QtConcurrent::run([this, baseEnv, savePath]() {
+        qDebug() << "[SIM] Lancement de la séquence ROS2 (arrière-plan)...";
+
+        if (!m_isSimInitialized) {
+            // 1) Iniciar mundo (Gazebo)
+            launchCommand(baseEnv + "ros2 launch vrx_gz vrx_environment.launch.py world:=sydney_regatta");
+            QThread::msleep(5000);
+
+            // 2) Spawnear WAM-V
+            launchCommand(baseEnv + "ros2 launch vrx_gz spawn.launch.py world:=sydney_regatta sim_mode:=full name:=wamv model:=wam-v");
+            QThread::msleep(3000);
+            
+            m_isSimInitialized = true;
+        }
+
+        // 3) Publicar waypoint GPS desde JSON
+        launchCommand(baseEnv + "ros2 run gps_waypoints gps_waypoint_node --ros-args -p checkpoints_file:=" + savePath);
         
-        // Attente de 5 secondes après le premier commande
-        QThread::msleep(5000);
-
-        // 2) Spawnear WAM-V
-        launch(baseEnv + "ros2 launch vrx_gz spawn.launch.py world:=sydney_regatta sim_mode:=full name:=wamv model:=wam-v");
+        // 4) Convertir GPS -> ENU
+        launchCommand(baseEnv + "ros2 run gps_waypoints gps_waypoint_converter");
         
-        // Attente de 3 secondes después del segundo comando
-        QThread::msleep(3000);
+        // 5) Controlador
+        launchCommand(baseEnv + "ros2 run gps_waypoints gps_waypoint_controller --ros-args -p goal_topic:=/wamv/goal_pose -p state_source:=gps_imu -p gps_topic:=/wamv/sensors/gps/gps/fix -p imu_topic:=/wamv/sensors/imu/imu/data -p control_mode:=thrusters -p left_thrust_topic:=/wamv/thrusters/left/thrust -p right_thrust_topic:=/wamv/thrusters/right/thrust -p left_pos_topic:=/wamv/thrusters/left/pos -p right_pos_topic:=/wamv/thrusters/right/pos -p k_thrust_lin:=82.0 -p k_thrust_ang:=28.0 -p max_thrust:=235.0 -p heading_slowdown_rad:=0.9 -p heading_inplace_rad:=1.35 -p heading_deadband_rad:=0.2 -p turn_close_dist:=20.0 -p min_forward_thrust:=10.0 -p turn_to_forward_ratio:=0.55 -p turn_bias_thrust:=24.0");
+
+        qDebug() << "[SIM] Séquence de lancement terminée.";
         
-        m_isSimInitialized = true;
-    }
-
-    // 3) Publicar waypoint GPS desde JSON
-    launch(baseEnv + "ros2 run gps_waypoints gps_waypoint_node --ros-args -p checkpoints_file:=" + savePath);
-    
-    // 4) Convertir GPS -> ENU
-    launch(baseEnv + "ros2 run gps_waypoints gps_waypoint_converter");
-    
-    // 5) Controlador
-    launch(baseEnv + "ros2 run gps_waypoints gps_waypoint_controller --ros-args -p goal_topic:=/wamv/goal_pose -p state_source:=gps_imu -p gps_topic:=/wamv/sensors/gps/gps/fix -p imu_topic:=/wamv/sensors/imu/imu/data -p control_mode:=thrusters -p left_thrust_topic:=/wamv/thrusters/left/thrust -p right_thrust_topic:=/wamv/thrusters/right/thrust -p left_pos_topic:=/wamv/thrusters/left/pos -p right_pos_topic:=/wamv/thrusters/right/pos -p k_thrust_lin:=82.0 -p k_thrust_ang:=28.0 -p max_thrust:=235.0 -p heading_slowdown_rad:=0.9 -p heading_inplace_rad:=1.35 -p heading_deadband_rad:=0.2 -p turn_close_dist:=20.0 -p min_forward_thrust:=10.0 -p turn_to_forward_ratio:=0.55 -p turn_bias_thrust:=24.0");
-
-    qDebug() << "[SIM] Séquence de lancement terminée.";
+        m_isSimLaunching = false;
+        emit isSimLaunchingChanged();
+    });
 }
 
 

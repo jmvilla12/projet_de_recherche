@@ -12,9 +12,12 @@
 
 class Pathfinding : public QObject {
     Q_OBJECT
+    Q_PROPERTY(bool isSimLaunching READ isSimLaunching NOTIFY isSimLaunchingChanged)
   public:
     explicit Pathfinding(QObject* parent = nullptr);
     virtual ~Pathfinding();
+
+    bool isSimLaunching() const { return m_isSimLaunching; }
 
     Q_INVOKABLE void setMissionData(const QVariantList& missionPoints, const QVariantList& restrictionZones);
     Q_INVOKABLE void calculateBestRoute();
@@ -23,12 +26,14 @@ class Pathfinding : public QObject {
 
 signals:
     void pathCalculated(const QVariantList& path, double distance, double time, const QString& bestAlgorithm);
+    void isSimLaunchingChanged();
 
 private:
     QVariantList m_missionPoints;
     QVariantList m_restrictionZones;
     QVariantList m_lastPath; // cached for export
     bool m_isSimInitialized = false;
+    bool m_isSimLaunching = false;
 
     struct GeoCoord { double lat; double lng; };
     struct Point2D  { double x;   double y;   };
