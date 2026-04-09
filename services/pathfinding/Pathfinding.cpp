@@ -466,13 +466,14 @@ void Pathfinding::runVrxSimulation() {
     // 1) Iniciar mundo (Gazebo)
     launch(baseEnv + "ros2 launch vrx_gz vrx_environment.launch.py world:=sydney_regatta");
     
-    // Small delays to avoid race conditions during world setup
-    QThread::msleep(2000);
+    // Attente de 5 secondes après le premier commande
+    QThread::msleep(5000);
 
     // 2) Spawnear WAM-V
     launch(baseEnv + "ros2 launch vrx_gz spawn.launch.py world:=sydney_regatta sim_mode:=full name:=wamv model:=wam-v");
     
-    QThread::msleep(1000);
+    // Attente de 3 secondes después del segundo comando
+    QThread::msleep(3000);
 
     // 3) Publicar waypoint GPS desde JSON
     launch(baseEnv + "ros2 run gps_waypoints gps_waypoint_node --ros-args -p checkpoints_file:=" + savePath);
