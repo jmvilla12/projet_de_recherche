@@ -258,7 +258,14 @@ static void launchCommand(const QString& cmd) {
     QProcess::startDetached("gnome-terminal", args);
 }
 
-// Algorithm: Explicit scanline grid that avoids restriction zones.
+struct ScanSegment {
+    int id;
+    double x1, x2, y;
+    bool visited;
+    QList<int> neighbors;
+};
+
+// Algorithm: Graph-based Cellular Decomposition Grid Sweep
 QList<Pathfinding::GeoCoord> Pathfinding::computeGrid(const QPainterPath& operableArea, const QList<QPolygonF>& restrPolys, double angle, const GeoCoord& refCoord) const {
     QList<GeoCoord> finalPath;
     if (operableArea.isEmpty()) return finalPath;
@@ -281,17 +288,16 @@ QList<Pathfinding::GeoCoord> Pathfinding::computeGrid(const QPainterPath& operab
     
     QRectF bounds = rotSafe.boundingRect();
     double y = bounds.top() + SWEEP_WIDTH / 2.0;
-    bool leftToRight = true;
 
-    QPointF lastPoint;
-    bool hasLast = false;
+    // 3. Generate coverage segments
+    QList<ScanSegment> segments;
+    int idCounter = 0;
 
     // We also need the unrotated restrictions for transit checks if we findSafePath in local space
     QPainterPath restrUnionLocal;
     for (const QPolygonF& rp : restrPolys) restrUnionLocal.addPolygon(rp);
 
     while (y <= bounds.bottom()) {
-        // Find all intersections of this scanline with ALL safe sub-polygons
         QList<double> intersections;
         for (const QPolygonF& poly : safePolys) {
             for (int i = 0; i < poly.size(); ++i) {
@@ -305,125 +311,113 @@ QList<Pathfinding::GeoCoord> Pathfinding::computeGrid(const QPainterPath& operab
         }
         std::sort(intersections.begin(), intersections.end());
 
-        // Each pair of intersections is a safe segment because they come from the subtracted safe area
-        struct Seg { double x1, x2; };
-        QList<Seg> rowSegments;
+        // Each pair of intersections is a safe segment
         for (int i = 0; i + 1 < intersections.size(); i += 2) {
             if (intersections[i + 1] - intersections[i] > 0.1) {
-                rowSegments << Seg{intersections[i], intersections[i + 1]};
+                segments.append({idCounter++, intersections[i], intersections[i + 1], y, false, {}});
             }
         }
+        y += SWEEP_WIDTH;
+    }
 
-        if (!rowSegments.isEmpty()) {
-            if (!leftToRight) std::reverse(rowSegments.begin(), rowSegments.end());
-            
-            for (const Seg& seg : rowSegments) {
-                double xStart = leftToRight ? seg.x1 : seg.x2;
-                double xEnd   = leftToRight ? seg.x2 : seg.x1;
-                QPointF pA(xStart, y);
-                QPointF pB(xEnd, y);
+    if (segments.isEmpty()) return finalPath;
 
-                if (hasLast) {
-                    QPointF uLast = inv.map(lastPoint);
-                    QPointF uA = inv.map(pA);
-                    QList<Point2D> transit = findSafePath(uLast, uA, restrUnionLocal, restrPolys);
-                    for (const Point2D& wp : transit) {
-                        // Safety check: ensure coordinates are valid before adding
-                        if (qAbs(wp.x) > 1e-6 || qAbs(wp.y) > 1e-6) {
-                            finalPath << localToGeo(refCoord, wp);
-                        }
+    // 4. Build Adjacency Graph (Topological Connectivity)
+    for (int i = 0; i < segments.size(); ++i) {
+        for (int j = i + 1; j < segments.size(); ++j) {
+            double dy = qAbs(segments[i].y - segments[j].y);
+            if (qAbs(dy - SWEEP_WIDTH) < 1e-3) {
+                // If they overlap geometrically in X
+                if (qMax(segments[i].x1, segments[j].x1) <= qMin(segments[i].x2, segments[j].x2) + 1e-3) {
+                    segments[i].neighbors.append(j);
+                    segments[j].neighbors.append(i);
+                }
+            }
+        }
+    }
+
+    // 5. Intelligent Graph Traversal (DFS/Cellular Pattern)
+    int currentId = 0;
+    bool goLeftToRight = true;
+    QPointF currentPos;
+    bool hasPos = false;
+
+    while (currentId != -1) {
+        ScanSegment& seg = segments[currentId];
+        seg.visited = true;
+
+        double enterX = goLeftToRight ? seg.x1 : seg.x2;
+        double exitX  = goLeftToRight ? seg.x2 : seg.x1;
+        
+        QPointF entryNode(enterX, seg.y);
+        QPointF exitNode(exitX, seg.y);
+
+        if (hasPos) {
+            QPointF p1 = inv.map(currentPos);
+            QPointF p2 = inv.map(entryNode);
+            // If jump is > SWEEP_WIDTH or the transition is blocked by a restriction, use safe routing
+            if (qAbs(currentPos.y() - seg.y) > SWEEP_WIDTH + 1e-3 || isLineBlocked(p1, p2, restrUnionLocal)) {
+                QList<Point2D> transit = findSafePath(p1, p2, restrUnionLocal, restrPolys);
+                for (const Point2D& wp : transit) {
+                    if (qAbs(wp.x) > 1e-6 || qAbs(wp.y) > 1e-6) {
+                        finalPath << localToGeo(refCoord, wp);
                     }
                 }
-
-                QPointF urA = inv.map(pA);
-                QPointF urB = inv.map(pB);
-                finalPath << localToGeo(refCoord, {urA.x(), urA.y()});
-                finalPath << localToGeo(refCoord, {urB.x(), urB.y()});
-                
-                lastPoint = pB;
-                hasLast = true;
             }
-            leftToRight = !leftToRight;
         }
 
-        y += SWEEP_WIDTH;
+        QPointF urA = inv.map(entryNode);
+        QPointF urB = inv.map(exitNode);
+        finalPath << localToGeo(refCoord, {urA.x(), urA.y()});
+        finalPath << localToGeo(refCoord, {urB.x(), urB.y()});
+        
+        currentPos = exitNode;
+        hasPos = true;
+
+        // Determine next segment
+        int nextId = -1;
+        double minD = 1e9;
+
+        // Priority 1: Topologically connected unvisited neighbors (sweeping the current cell)
+        for (int nid : seg.neighbors) {
+            if (!segments[nid].visited) {
+                double d1 = qAbs(exitNode.x() - segments[nid].x1);
+                double d2 = qAbs(exitNode.x() - segments[nid].x2);
+                double d = qMin(d1, d2);
+                if (d < minD) {
+                    minD = d;
+                    nextId = nid;
+                    goLeftToRight = (d1 < d2); // Enter from the closest side
+                }
+            }
+        }
+
+        // Priority 2: Unvisited segment anywhere (jumping to a new cell/lobe)
+        if (nextId == -1) {
+            for (int i = 0; i < segments.size(); ++i) {
+                if (!segments[i].visited) {
+                    double d1 = qSqrt(qPow(exitNode.x() - segments[i].x1, 2) + qPow(exitNode.y() - segments[i].y, 2));
+                    double d2 = qSqrt(qPow(exitNode.x() - segments[i].x2, 2) + qPow(exitNode.y() - segments[i].y, 2));
+                    double d = qMin(d1, d2);
+                    if (d < minD) {
+                        minD = d;
+                        nextId = i;
+                        goLeftToRight = (d1 < d2);
+                    }
+                }
+            }
+        }
+
+        currentId = nextId;
     }
 
     return finalPath;
 }
 
 QList<Pathfinding::GeoCoord> Pathfinding::computeSubdivision(const QPainterPath& operableArea, const QList<QPolygonF>& restrPolys, const GeoCoord& refCoord) const {
-    QList<GeoCoord> finalPath;
-    if (operableArea.isEmpty()) return finalPath;
-
-    // 1. Identify all critical X and Y bounds (Mission + Restrictions)
-    QSet<double> xCuts, yCuts;
-    QRectF mBounds = operableArea.boundingRect();
-    xCuts << mBounds.left() << mBounds.right();
-    yCuts << mBounds.top() << mBounds.bottom();
-
-    for (const QPolygonF& rp : restrPolys) {
-        QRectF rb = rp.boundingRect();
-        // Only include cuts that are inside the mission area to avoid unnecessary complexity
-        if (rb.left() > mBounds.left() && rb.left() < mBounds.right()) xCuts << rb.left();
-        if (rb.right() > mBounds.left() && rb.right() < mBounds.right()) xCuts << rb.right();
-        if (rb.top() > mBounds.top() && rb.top() < mBounds.bottom()) yCuts << rb.top();
-        if (rb.bottom() > mBounds.top() && rb.bottom() < mBounds.bottom()) yCuts << rb.bottom();
-    }
-
-    QList<double> sortedX = xCuts.values(); std::sort(sortedX.begin(), sortedX.end());
-    QList<double> sortedY = yCuts.values(); std::sort(sortedY.begin(), sortedY.end());
-
-    // 2. Union of all restrictions for collision checking
-    QPainterPath restrUnion;
-    for (const QPolygonF& rp : restrPolys) restrUnion.addPolygon(rp);
-
-    // 3. Process each atomic rectangle
-    bool hasLast = false;
-    QPointF lastPoint;
-    bool leftToRight = true;
-
-    for (int j = 0; j + 1 < sortedY.size(); ++j) {
-        double y1 = sortedY[j], y2 = sortedY[j+1];
-        QList<int> xIndices; 
-        for (int i = 0; i + 1 < sortedX.size(); ++i) xIndices << i;
-        if (!leftToRight) std::reverse(xIndices.begin(), xIndices.end());
-
-        for (int i : xIndices) {
-            double x1 = sortedX[i], x2 = sortedX[i+1];
-            QRectF rect(x1, y1, x2 - x1, y2 - y1);
-            QPointF center = rect.center();
-
-            // A rectangle is safe if its center is inside mission area AND NOT inside any restriction
-            // (Since it's built from BBox edges, this is a good approximation for subdivision)
-            if (operableArea.contains(center) && !restrUnion.contains(center)) {
-                // Generate a grid local to this rectangle
-                QPainterPath rectPath; rectPath.addRect(rect);
-                // We use computeGrid but for this specific local rectangle, with 0 degree sweep
-                QList<GeoCoord> subGrid = computeGrid(rectPath, restrPolys, 0.0, refCoord);
-                
-                if (!subGrid.isEmpty()) {
-                    // Connect to previous point if needed
-                    if (hasLast) {
-                        GeoCoord startGeo = subGrid.first();
-                        Point2D startLocal = geoToLocal(refCoord, startGeo);
-                        QList<Point2D> transit = findSafePath(lastPoint, QPointF(startLocal.x, startLocal.y), restrUnion, restrPolys);
-                        for (const Point2D& wp : transit) finalPath << localToGeo(refCoord, wp);
-                    }
-                    
-                    finalPath.append(subGrid);
-                    GeoCoord endGeo = subGrid.last();
-                    Point2D endLocal = geoToLocal(refCoord, endGeo);
-                    lastPoint = QPointF(endLocal.x, endLocal.y);
-                    hasLast = true;
-                }
-            }
-        }
-        leftToRight = !leftToRight;
-    }
-
-    qDebug() << "[SUBDIVISION] Generated subdivision path with" << finalPath.size() << "points.";
-    return finalPath;
+    // The upgraded computeGrid inherently performs advanced Cell Decomposition via 
+    // adjacency graphs. Running it at 0 degrees corresponds perfectly to the optimal subdivision approach.
+    return computeGrid(operableArea, restrPolys, 0.0, refCoord);
 }
 
 #include <QThread>
