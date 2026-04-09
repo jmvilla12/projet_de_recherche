@@ -156,6 +156,28 @@ ApplicationWindow {
                             font { family: "Geist"; pixelSize: 13; bold: true; letterSpacing: -0.2}
                             anchors.verticalCenter: parent.verticalCenter
                         }
+
+                        Button {
+                            text: "(1)"
+                            visible: mapView.drawingMode
+                            anchors.verticalCenter: parent.verticalCenter
+                            implicitHeight: 24
+                            implicitWidth: 32
+                            onClicked: mapView.addVertexManually(-33.724223, 150.679736)
+                            
+                            background: Rectangle {
+                                color: parent.pressed ? "#e0e6ed" : (parent.hovered ? "#f0f4f8" : "white")
+                                border.color: "#d1dce5"
+                                radius: 4
+                            }
+                            contentItem: Label {
+                                text: parent.text
+                                font { family: "Geist"; pixelSize: 11; bold: true }
+                                color: "#00a651"
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                        }
                         
                         
                         Row {

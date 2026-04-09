@@ -37,6 +37,15 @@ Item {
         return pathfindingService.savePathToJson(filePath);
     }
 
+    function addVertexManually(lat, lng) {
+        var coord = QtPositioning.coordinate(lat, lng);
+        vertices = vertices.concat([coord]);
+        vertexModel.append({ "lat": lat, "lng": lng });
+        calculatedArea = calculatePolygonArea(vertices);
+        calculatedPerimeter = calculatePerimeter(vertices);
+        updatePolygonPaths();
+    }
+
     function runSimulation() {
         pathfindingService.runVrxSimulation();
     }
