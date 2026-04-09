@@ -1,19 +1,18 @@
+#include <QDebug>
 #include <QFont>
 #include <QFontDatabase>
 #include <QGuiApplication>
 #include <QIcon>
+#include <QLocationPermission>
+#include <QPermission>
 #include <QQmlApplicationEngine>
+#include <QQmlContext>
+#include <QQmlEngine>
 #include <QQuickStyle>
 
 #include "AreaController.h"
-#include "Pathfinding.h"
-
-#include <QLocationPermission>
-#include <QPermission>
-#include <QDebug>
-#include <QQmlEngine>
-#include <QQmlContext>
 #include "GPSManager.h"
+#include "Pathfinding.h"
 
 int main(int argc, char* argv[]) {
     QGuiApplication app(argc, argv);
@@ -25,11 +24,12 @@ int main(int argc, char* argv[]) {
     locationPermission.setAccuracy(QLocationPermission::Precise);
     locationPermission.setAvailability(QLocationPermission::WhenInUse);
 
-    app.requestPermission(locationPermission, [](const QPermission &p) {
+    app.requestPermission(locationPermission, [](const QPermission& p) {
         if (p.status() == Qt::PermissionStatus::Granted) {
             qDebug() << "Location permission granted! Sensor will wait for manual toggle.";
         } else {
-            qDebug() << "Location permission denied or undetermined. Status: " << static_cast<int>(p.status());
+            qDebug() << "Location permission denied or undetermined. Status: "
+                     << static_cast<int>(p.status());
         }
     });
 
@@ -61,5 +61,5 @@ int main(int argc, char* argv[]) {
         []() { QCoreApplication::exit(-1); }, Qt::QueuedConnection);
     engine.loadFromModule("projet_de_recherche", "Main");
 
-    return app.exec();
+    return app.exec(); // hola
 }
