@@ -10,6 +10,8 @@
 #include <QUrl>
 #include <QQueue>
 #include <QHash>
+#include <QThread>
+#include <QProcess>
 
 const double SWEEP_WIDTH = 3; // Increased spacing for visibility during testing, can be reduced to 1.2 later
 const double DRONE_SPEED = 5.0;
