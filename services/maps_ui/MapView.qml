@@ -752,7 +752,7 @@ Item {
                 Rectangle {
                     anchors.centerIn: parent
                     width: parent.width; height: parent.height; radius: 15
-                    color: "#00E5FF"; opacity: 0.3
+                    color: "white"; opacity: 0.3
                     scale: root.isSimulating ? pulseAnimSim.scaleValue : 1.0
 
                     SequentialAnimation on scale {
@@ -768,11 +768,11 @@ Item {
                 Rectangle {
                     anchors.centerIn: parent
                     width: 14; height: 14; radius: 7
-                    color: "#00E5FF"; border.color: "white"; border.width: 2
+                    color: "white"; border.color: "#333"; border.width: 2
                     
                     layer.enabled: true
                     layer.effect: MultiEffect {
-                        shadowEnabled: true; shadowColor: "#4000E5FF"; shadowBlur: 0.5
+                        shadowEnabled: true; shadowColor: "#40000000"; shadowBlur: 0.5
                     }
 
                     Image {

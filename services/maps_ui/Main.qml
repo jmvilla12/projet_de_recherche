@@ -1347,7 +1347,14 @@ ApplicationWindow {
                                                             mapView.currentRestrictionName = text;
                                                         } else {
                                                             var zones = mapView.restrictionZones;
-                                                            zones[index].name = text;
+                                                            var zone = zones[index];
+                                                            // Create a new object to force QML property updates
+                                                            zones[index] = {
+                                                                name: text,
+                                                                points: zone.points,
+                                                                reason: zone.reason,
+                                                                color: zone.color
+                                                            };
                                                             mapView.restrictionZones = zones.slice();
                                                         }
                                                     }
